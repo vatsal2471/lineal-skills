@@ -213,3 +213,47 @@ Example: -27.95 + 4.60 + 26.57 + 26.87 + 31.47 = **61.56**
 | JE saves with empty lines | The combined script must call `nlapiCommitLineItem` before `nlapiSelectNewLineItem`. Also ensure the "Add" button click runs before Save (the setTimeout chain handles this). |
 | Warning toast on page load | Dismiss via JS — find the `×` button and `.click()` it. Do NOT click by coordinate (it's near the nav bar and can navigate away). |
 | Session expired (login page) | Credentials are pre-filled. Click the Log In button. URL redirect will return to Match Bank Data after login. |
+
+---
+
+## GitHub Sync — Keep This Skill Updated
+
+The source of truth for this skill is: **https://github.com/vatsal2471/lineal-skills**
+
+The git repo with push credentials is stored in the user's persistent folder at:
+`<mnt>/lineal-skills-git/`
+
+### After ANY change to this skill (new months completed, new fixes, Walmart IDs, etc.)
+
+Run these three commands to push to GitHub:
+
+```bash
+# 1. Find the persistent git repo (path varies by session)
+REPO=$(find /sessions/*/mnt/lineal-skills-git -name ".git" -maxdepth 1 2>/dev/null | head -1 | sed 's/\/.git//')
+
+# 2. Copy the updated SKILL.md into the repo
+cp /path/to/updated/SKILL.md "$REPO/SKILL.md"
+
+# 3. Commit and push
+cd "$REPO" && git add SKILL.md && git commit -m "Update skill: <describe what changed>" && git push
+```
+
+Or as a one-liner once you know the repo path:
+```bash
+REPO=/sessions/friendly-amazing-shannon/mnt/lineal-skills-git
+git -C "$REPO" add SKILL.md && git -C "$REPO" commit -m "update" && git -C "$REPO" push
+```
+
+### If the token expires (push is rejected with 401/403)
+
+The token is embedded in the git remote URL. To update it:
+```bash
+REPO=$(find /sessions/*/mnt/lineal-skills-git -name ".git" -maxdepth 1 2>/dev/null | head -1 | sed 's/\/.git//')
+cd "$REPO"
+git remote set-url origin https://NEW_TOKEN@github.com/vatsal2471/lineal-skills.git
+```
+Then re-run the push. Ask the user to generate a new token at github.com/settings/tokens if needed.
+
+### Team members install the skill
+
+From the GitHub repo, teammates click the raw SKILL.md file → download → rename to `netsuite-bank-match.skill` → open in Cowork → Save skill.
