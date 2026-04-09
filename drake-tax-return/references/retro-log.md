@@ -175,12 +175,16 @@ Update this file after every 1065 return. This is how the skill gets smarter ove
 2. Federal 2408 (×3) — Missing Asset Life on Form 4562 Depreciation Detail (all 3 assets)
 3. Federal 5723 — Due Diligence Questions Incomplete — HOH filing status requires DD1 Head of Household tab
 4. Schedule E address fields — city/state/ZIP entered in wrong fields when using Tab navigation (same issue as prior returns)
+5. View/Print MESSAGES — "missing required data on E Rent and Royalty Income" — Schedule E Question A (1099 payments) not answered and QBI "trade or business" dropdown not set
+6. PIN signature date entered as 2826 instead of 2026
 
 **Root causes:**
 - ID Screen (IDS link from Screen 1) requires either driver's license info or "did not provide" checkbox — not obvious from the main Screen 1
 - Form 4562 Life field was left blank when entering assets — the recovery period (27.5 for residential rental) must be explicitly entered
 - Form 8867 alone is NOT sufficient for HOH due diligence — must also complete DD1 "Head of Household" tab with marital status and home cost documentation
 - Schedule E address Tab navigation sends cursor to unexpected fields — Heads Down Entry (Ctrl+N) is reliable
+- **Blue fields on Schedule E were not filled**: Question A ("Did you make any payments in 2025 that would require you to file Form(s) 1099?") and the QBI "This activity is a trade or business" dropdown are blue required fields that were missed during initial entry. The calculation dialog showed green checkmarks and "Eligible for E.F." but the View/Print MESSAGES page still had errors.
+- PIN date typo: Typed 2826 instead of 2026 for signature date
 
 **Time lost per issue:**
 | Issue | Time Lost | Avoidable? |
@@ -192,6 +196,8 @@ Update this file after every 1065 return. This is how the skill gets smarter ove
 | Depreciation method "SL" invalid | ~3 min | Yes — use "ARR" for MACRS residential rental |
 | Date format "07/2002" → "07-20-2002" | ~2 min | Yes — always use full date: MM/DD/YYYY |
 | Exit button not responding on Screen 1 | ~2 min | Partially — use Next button instead |
+| Schedule E blue fields (Q-A, QBI dropdown) | ~5 min | Yes — always fill ALL blue fields on every screen |
+| PIN date typo (2826→2026) | ~2 min | Yes — verify year when typing dates |
 
 **Fix for next time:**
 1. **Always enter Life field on Form 4562** — 27.5 for residential rental property (ARR method)
@@ -200,6 +206,9 @@ Update this file after every 1065 return. This is how the skill gets smarter ove
 4. **Use "ARR" not "SL"** for MACRS 27.5yr residential rental depreciation method
 5. **Use full date format MM/DD/YYYY** — "07/2002" gets parsed as 07-20-2002
 6. **Schedule E address: use Heads Down Entry** for city/state/ZIP to avoid Tab navigation issues
+7. **Always fill ALL blue fields on Schedule E**: Question A (1099 payments — typically "No" for rental), Question B (if A=Yes), and QBI "This activity is a trade or business" dropdown (set to "N" for rental properties)
+8. **Always check View/Print MESSAGES after calculating** — the calculation dialog may show "Eligible for E.F." with green checkmarks but MESSAGES page can still contain errors
+9. **Verify PIN signature date year** — easy to mistype 2026 as 2826
 
 **New pitfalls discovered:**
 - **Error 500 (Missing ID Info)**: The IDS screen (Required Identification) is accessed via the "ID Screen" link on Screen 1. It requires driver's license details OR checking "Taxpayer did not provide a driver's license or state-issued photo ID."
@@ -207,6 +216,9 @@ Update this file after every 1065 return. This is how the skill gets smarter ove
 - **Error 5723 (HOH Due Diligence)**: Form 8867 handles EIC/CTC/AOTC due diligence questions, but **HOH-specific due diligence** is on a separate screen: DD1 > "Head of Household" tab. Must check marital status (Q1) and home cost documentation (Q4).
 - **DD1 has multiple tabs**: Child, Head of Household, Income, 2nd-4th Business Income. The relevant tab depends on what credits/filing status apply.
 - **CTC age limit**: Child Tax Credit cannot be taken for a child over age 16. Drake automatically excludes but shows a return note (not an error).
+- **Schedule E blue required fields**: Question A ("Did you make any payments in 2025 that would require you to file Form(s) 1099?") and the QBI "This activity is a trade or business" dropdown are blue fields that MUST be filled. For rental properties: Q-A = "No" (typically), QBI trade/business = "N".
+- **"Eligible for E.F." ≠ no errors**: The calculation results dialog can show green checkmarks and "Eligible for E.F." even when View/Print MESSAGES still contains errors. ALWAYS navigate to View/Print and check the MESSAGES node in the left tree. If MESSAGES node is absent, the return is truly clean.
+- **F (Federal Code) field on Schedule E**: The "F" column is Federal Code (0=exclude, blank=include), NOT fair rental days. Fair rental days (line 2) is on the Income/Expenses tab. Entering 365 in the F column triggers a help dialog.
 
 ---
 
