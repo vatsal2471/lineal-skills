@@ -34,6 +34,38 @@ This skill uses **one reference file per return type**. Only load what you need:
 
 ## Workflow: Every Return
 
+### Phase 0: Pull Latest Skill from GitHub (FIRST THING EVERY SESSION)
+
+**Before doing ANY work**, pull the latest version of this skill from GitHub to ensure you have all learnings from previous sessions:
+
+```bash
+# Clone or pull the latest skill from GitHub
+cd /sessions/$(basename $PWD)
+git clone https://github.com/vatsal2471/lineal-skills.git github-repo 2>/dev/null || (cd github-repo && git pull)
+```
+
+The repo structure is:
+```
+lineal-skills/
+  drake-tax-return/     ← this skill
+    SKILL.md
+    references/
+      retro-log.md
+      1065.md
+      1120.md
+      1040.md
+      return_schemas.md
+    scripts/
+      preprocess.py
+  netsuite-bank-match/  ← other skills
+    SKILL.md
+```
+
+Read the reference files and retro-log from the cloned repo, NOT from the local skill directory — the repo is always the source of truth.
+
+**GitHub PAT for pushing (store in git config, ask user if not set):**
+The user's PAT is configured for `vatsal2471/lineal-skills` with Contents read/write scope. If git push fails with 403, ask the user for a fresh token.
+
 ### Phase 1: Pre-process (before touching Drake)
 
 1. **Read source documents** — prior-year PDF return + current-year income data (Excel/CSV/PDF)
@@ -79,13 +111,32 @@ Follow the screen order in the return-type reference file. The general principle
    - New pitfalls or tricks discovered
 2. **Update the reference file** — if a new EF error, new screen behavior, new field, or faster navigation path was discovered, add it to `references/[type].md`
 3. **Create new reference file** — if this was a new return type, create `references/[type].md` from scratch using the template at the bottom of this file
-4. **Package and present** the updated `.skill` file so the user can reinstall with new learnings:
+4. **Commit and push to GitHub** — this is how the skill gets version-controlled:
+   ```bash
+   cd /sessions/$(basename $PWD)/github-repo
+   # Copy updated files from the working skill directory back to repo
+   cp -r /path/to/drake-tax-return-edit/* drake-tax-return/
+   git add drake-tax-return/
+   git commit -m "Return: [Client] [Type] — [summary of learnings]"
+   git push origin main
+   ```
+   The commit message should summarize what was learned (e.g., "Sood 1040: 8867 Heads Down Entry, K-1 QBI MFC fix, Q7a trap").
+   
+   **If git push fails (no auth):** Ask the user for their GitHub PAT for `vatsal2471/lineal-skills`, then:
+   ```bash
+   git remote set-url origin https://x-access-token:<PAT>@github.com/vatsal2471/lineal-skills.git
+   git push origin main
+   ```
+
+5. **Package and present** the updated `.skill` file so the user can reinstall with new learnings:
    ```bash
    cd /path/to/skill-creator && python -m scripts.package_skill /path/to/drake-tax-return /path/to/outputs/
    ```
    Then use `present_files` to give the user the `.skill` file with a "Save skill" button.
 
 The skill must get measurably faster with each return. Track time in the retro log. If return #1 of a type took 180 minutes, return #5 should take under 15.
+
+**GitHub is the source of truth.** The `.skill` package is a convenience for reinstalling, but all history lives in the repo at https://github.com/vatsal2471/lineal-skills. Every return = one commit. To see how the skill evolved: `git log --oneline drake-tax-return/`.
 
 ---
 
