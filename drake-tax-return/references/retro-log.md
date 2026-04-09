@@ -163,6 +163,53 @@ Update this file after every 1065 return. This is how the skill gets smarter ove
 
 ---
 
+### 2026-04-09 — DVORAK, JULIA M — SSN: 320-70-4594
+**Time:** ~25 minutes (across 2 sessions — context compaction mid-return)
+**Target:** 15 min
+**Return type:** 1040 HOH Individual, IL filing, Schedule E rental (Dana Court), Form 4562 depreciation (3 assets), Form 8867 Due Diligence (HOH), 1099-INT
+
+**Summary:** Federal total income $11,239, taxable income $0, total tax $0. IL1040 taxable income $5,539, total tax $274 balance due. CTC not available — Susanna Dvorak (dependent) over age 16. Eligible for E.F. with zero federal EF errors after fixes.
+
+**Errors encountered:**
+1. Federal 500 — Missing ID Information (Required Identification screen — driver's license)
+2. Federal 2408 (×3) — Missing Asset Life on Form 4562 Depreciation Detail (all 3 assets)
+3. Federal 5723 — Due Diligence Questions Incomplete — HOH filing status requires DD1 Head of Household tab
+4. Schedule E address fields — city/state/ZIP entered in wrong fields when using Tab navigation (same issue as prior returns)
+
+**Root causes:**
+- ID Screen (IDS link from Screen 1) requires either driver's license info or "did not provide" checkbox — not obvious from the main Screen 1
+- Form 4562 Life field was left blank when entering assets — the recovery period (27.5 for residential rental) must be explicitly entered
+- Form 8867 alone is NOT sufficient for HOH due diligence — must also complete DD1 "Head of Household" tab with marital status and home cost documentation
+- Schedule E address Tab navigation sends cursor to unexpected fields — Heads Down Entry (Ctrl+N) is reliable
+
+**Time lost per issue:**
+| Issue | Time Lost | Avoidable? |
+|-------|-----------|-----------|
+| Error 500 — finding ID Screen | ~3 min | Yes — check IDS on every return |
+| Error 2408 — adding Life to 4562 | ~2 min | Yes — always enter Life=27.5 for residential rental |
+| Error 5723 — finding DD1 HOH tab | ~5 min | Yes — always visit DD1 for HOH/EIC/CTC returns |
+| Schedule E address field confusion | ~3 min | Yes — use Heads Down Entry for address |
+| Depreciation method "SL" invalid | ~3 min | Yes — use "ARR" for MACRS residential rental |
+| Date format "07/2002" → "07-20-2002" | ~2 min | Yes — always use full date: MM/DD/YYYY |
+| Exit button not responding on Screen 1 | ~2 min | Partially — use Next button instead |
+
+**Fix for next time:**
+1. **Always enter Life field on Form 4562** — 27.5 for residential rental property (ARR method)
+2. **Always visit IDS screen** — check "did not provide" if no DL info available
+3. **For HOH returns: always visit DD1 > Head of Household tab** — check marital status and home cost documentation (utility bills, property tax bills)
+4. **Use "ARR" not "SL"** for MACRS 27.5yr residential rental depreciation method
+5. **Use full date format MM/DD/YYYY** — "07/2002" gets parsed as 07-20-2002
+6. **Schedule E address: use Heads Down Entry** for city/state/ZIP to avoid Tab navigation issues
+
+**New pitfalls discovered:**
+- **Error 500 (Missing ID Info)**: The IDS screen (Required Identification) is accessed via the "ID Screen" link on Screen 1. It requires driver's license details OR checking "Taxpayer did not provide a driver's license or state-issued photo ID."
+- **Error 2408 (Missing Asset Life)**: The "Life" column on the Form 4562 summary grid must be populated. For residential rental (ARR method), Life = 27.5.
+- **Error 5723 (HOH Due Diligence)**: Form 8867 handles EIC/CTC/AOTC due diligence questions, but **HOH-specific due diligence** is on a separate screen: DD1 > "Head of Household" tab. Must check marital status (Q1) and home cost documentation (Q4).
+- **DD1 has multiple tabs**: Child, Head of Household, Income, 2nd-4th Business Income. The relevant tab depends on what credits/filing status apply.
+- **CTC age limit**: Child Tax Credit cannot be taken for a child over age 16. Drake automatically excludes but shows a return note (not an error).
+
+---
+
 ## Template for Future Entries
 
 Copy this template after each return:
