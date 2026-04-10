@@ -48,9 +48,23 @@ This skill uses **one reference file per return type**. Only load what you need:
 **Before doing ANY work**, pull the latest version of this skill from GitHub to ensure you have all learnings from previous sessions:
 
 ```bash
+# Load persistent GitHub PAT (saved across sessions at user-owned 600-perm location)
+PAT_FILE=/sessions/$(basename $PWD)/mnt/.claude/session-env/.github-pat
+if [ -f "$PAT_FILE" ]; then
+  GITHUB_PAT=$(cat "$PAT_FILE")
+  REMOTE_URL="https://x-access-token:${GITHUB_PAT}@github.com/vatsal2471/lineal-skills.git"
+else
+  REMOTE_URL="https://github.com/vatsal2471/lineal-skills.git"
+  echo "WARNING: No PAT found at $PAT_FILE — push will fail until user provides one"
+fi
+
 # Clone or pull the latest skill from GitHub
 cd /sessions/$(basename $PWD)
-git clone https://github.com/vatsal2471/lineal-skills.git github-repo 2>/dev/null || (cd github-repo && git pull)
+if [ -d github-repo ]; then
+  cd github-repo && git remote set-url origin "$REMOTE_URL" && git pull
+else
+  git clone "$REMOTE_URL" github-repo
+fi
 ```
 
 The repo structure is:
@@ -72,8 +86,8 @@ lineal-skills/
 
 Read the reference files and retro-log from the cloned repo, NOT from the local skill directory — the repo is always the source of truth.
 
-**GitHub PAT for pushing (store in git config, ask user if not set):**
-The user's PAT is configured for `vatsal2471/lineal-skills` with Contents read/write scope. If git push fails with 403, ask the user for a fresh token.
+**GitHub PAT for pushing (persistent, auto-loaded):**
+The user's PAT is saved at `/sessions/$(basename $PWD)/mnt/.claude/session-env/.github-pat` (mode 600, owner-only). The Phase 0 block above reads it and injects into the origin URL automatically. If the file is missing or the push returns 401/403, ask the user for a fresh fine-grained PAT scoped to `vatsal2471/lineal-skills` with Contents: Read and write, then save it to that same path with `chmod 600`.
 
 ### Phase 1: Pre-process (before touching Drake)
 
@@ -132,9 +146,12 @@ Follow the screen order in the return-type reference file. The general principle
    ```
    The commit message should summarize what was learned (e.g., "Sood 1040: 8867 Heads Down Entry, K-1 QBI MFC fix, Q7a trap").
    
-   **If git push fails (no auth):** Ask the user for their GitHub PAT for `vatsal2471/lineal-skills`, then:
+   **If git push fails (no auth):** The persistent PAT at `/sessions/$(basename $PWD)/mnt/.claude/session-env/.github-pat` should have been loaded in Phase 0. If the file is missing or expired, ask the user for a fresh fine-grained PAT for `vatsal2471/lineal-skills` (Contents: Read and write), then save it and retry:
    ```bash
-   git remote set-url origin https://x-access-token:<PAT>@github.com/vatsal2471/lineal-skills.git
+   PAT_FILE=/sessions/$(basename $PWD)/mnt/.claude/session-env/.github-pat
+   printf '%s' '<PAT>' > "$PAT_FILE" && chmod 600 "$PAT_FILE"
+   GITHUB_PAT=$(cat "$PAT_FILE")
+   git remote set-url origin "https://x-access-token:${GITHUB_PAT}@github.com/vatsal2471/lineal-skills.git"
    git push origin main
    ```
 
