@@ -30,10 +30,10 @@ This skill uses **one reference file per return type**. Only load what you need:
 
 | Return Type | Reference File | Status |
 |-------------|---------------|--------|
-| 1065 (Partnership) | `references/1065.md` | Complete — 5 returns done |
-| 1120 (C-Corp) | `references/1120.md` | Complete — 1 return done |
+| 1065 (Partnership) | `references/1065.md` | In progress — 2 returns documented (Nautilus Jeffery, Nautilus Maple). SSD/Cornell/7220 visible in CSM but never had retro entries captured. |
+| 1120 (C-Corp) | `references/1120.md` | In progress — 1 return done (Atamin) |
 | 1120S (S-Corp) | `references/1120s.md` | Create after first return |
-| 1040 (Individual) | `references/1040.md` | In progress — 2 returns done (Sood MFJ, Dvorak HOH) |
+| 1040 (Individual) | `references/1040.md` | In progress — 3 returns done (Sood MFJ, Dvorak HOH, Link MFJ) |
 | 990 (Exempt Org) | `references/990.md` | Create after first return |
 | 1041 (Estate/Trust) | `references/1041.md` | Create after first return |
 
@@ -213,15 +213,51 @@ Every individual screenshot-click-type round-trip costs ~3-5 seconds. A return w
 - To replace a value: single-click → Home → Shift+End → type new value
 - For dropdowns: single-click to open, type first letter(s) to jump, Enter to select
 
-### Checkboxes: The Heads Down Entry Solution
+### Heads Down Entry (HDE) — PRIMARY navigation mode for data entry
 
-**If any checkbox won't respond to direct mouse clicks, immediately switch to Heads Down Entry mode.** Don't waste time trying different coordinates — this is the universal fix discovered after 50+ failed click attempts on Form 5472.
+**HDE is not an escape hatch — it is the default, fastest, most reliable way to enter data into any Drake screen.** Pixel-clicking was the old approach. After three consecutive 1040 returns where HDE dramatically outperformed direct clicking (including 60+ min wasted on Form 8867 in Sood, 20+ min on Form 8863 in Link), the policy is now: **turn HDE on at the top of every screen that has more than a handful of fields and stay in HDE until the screen is done.** Switch back to direct clicking only for the narrow exceptions listed below.
 
-1. Right-click anywhere on the screen → "Heads Down Entry" (or press **Ctrl+N**)
-2. Every field gets a number
-3. Type a field number + Enter to navigate to that field
-4. Click the value input box and type **X** + Enter to check the checkbox
-5. Press Escape to exit Heads Down Entry mode
+**Why HDE wins over pixel-clicking:**
+- **Resolution-independent.** Field 17 is field 17 regardless of window size, DPI, Drake version, or theme. Coordinate maps break the instant Drake's layout shifts.
+- **Unambiguous.** No risk of hitting the adjacent Yes/No/N/A column on a due-diligence checkbox — type the field number and you land exactly on that input.
+- **Batchable.** The entire HDE flow for a screen is keyboard-only (click input → type number → Return → click value → type value → Return), which means you can pack dozens of field entries into a single `computer_batch` call. Pixel-clicking requires a fresh screenshot every few actions to re-verify alignment.
+- **Works uniformly for every field type.** Text, amount, date, dropdown, checkbox — the HDE entry pattern is the same. Direct clicking has different rules for each.
+- **No double-click traps.** Single-click on an amount field in direct mode can accidentally become a double-click and open a detail worksheet. HDE never does this.
+- **Immune to "triple-click deletes data" bugs** that have bitten returns before.
+
+**How to turn it on and off:**
+1. Press **Ctrl+N** (or right-click → Heads Down Entry). Every field on the screen gets a number badge.
+2. Stay in HDE for the whole screen.
+3. Press **Escape** (or Ctrl+N again) when you're done with that screen.
+
+**The HDE entry pattern (batch-friendly):**
+
+For each field, HDE gives you an "input box" where you type the field number and a "value box" where you type the value. The coordinates below are what Sood/Dvorak/Link all used on Drake Tax 2025 — verify with a screenshot once per screen, then batch.
+
+```
+click (548, 87)    # field-number input box
+type "17"          # the HDE number of the field you want
+key Return
+click (585, 91)    # value input box
+type "X"           # or the text/amount/date you want
+key Return
+# repeat for next field — no screenshot needed between fields
+```
+
+Pack as many of these as you need into one `computer_batch`. A full Form 8867 (12+ checkboxes) takes one batch and one verification screenshot instead of dozens of click-screenshot rounds.
+
+**Checkbox values in HDE:** type `X` + Return to check, `Delete` (or clear the value box and Return) to uncheck. For Yes/No/N/A groups, each column has its own field number — check the correct one, uncheck the others in the same group if needed.
+
+**Text, amount, date values:** just type the value in the value box and press Return. HDE handles tabbing out automatically.
+
+**The narrow exceptions — when direct clicking is still appropriate:**
+- Opening a detail worksheet (double-click on an amount field) — HDE won't open the sub-window.
+- Navigating between tabs at the top of a screen (States tab, PTR K tab, etc.) — those are outside the HDE field grid.
+- Clicking Exit/Save/Calculate/View buttons on the toolbar — toolbar buttons aren't HDE-numbered.
+- Selecting from an open dropdown list — fine to click the item once the dropdown is open.
+- Screen navigation via the search bar at top-left.
+
+Everything else — every text field, every amount, every checkbox, every dropdown selection inside a screen — should go through HDE by default.
 
 ### Error Checking
 
