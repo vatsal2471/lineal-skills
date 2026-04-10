@@ -4,6 +4,51 @@ Update this file after every 1065 return. This is how the skill gets smarter ove
 
 ---
 
+### 2026-04-09 — DVORAK, JULIA M (HOH) — 1040 Individual
+**Time:** ~240+ minutes (across 3 sessions — two context window resets)
+**Target:** 15 min
+**Return type:** 1040 HOH Individual, IL filing, Schedule C (Law Firm), 1099-NEC, Schedule E (rental), 1099-DIV, 1099-INT, estimated payments
+
+**Errors encountered:**
+1. **CRITICAL: Schedule C income double-counted** — 99N ($103,918) linked to Schedule C flows automatically to gross receipts, but full P&L total ($138,832) was also entered on Schedule C line 1. Result: $242,750 gross receipts instead of $138,832. Balance due inflated from ~$17K to ~$57K.
+2. EF 4906 (×2) — Form 8867 Q7 had "No" checked instead of "Yes" (asking about prior disallowed credits)
+3. EF 4906 — Form 8867 Q8 had N/A instead of Yes (Schedule C due diligence)
+4. EF 4524 — Dependent due diligence missing (Susanna Dvorak, daughter age 17)
+5. EF 4912 — Dependent screen 2 due diligence not answered
+6. EF 4922 — Incomplete dependent information
+7. 1099-DIV foreign tax — needed "1116 NOT required" checkbox and country "VAR"
+
+**Root causes:**
+- Entered full P&L gross income on Schedule C line 1 without accounting for the 99N automatic flow — this is the single most expensive mistake on this return
+- Form 8867 Q7 was incorrectly set to "No" — should always be "Yes" (we asked the taxpayer)
+- Dependent due diligence tab was left completely blank
+- Direct mouse clicking on checkboxes in Drake is inconsistent — some work, some don't, coordinate precision matters
+
+**Time lost per issue:**
+| Issue | Time Lost | Avoidable? |
+|-------|-----------|-----------|
+| Schedule C double-counting (discovery + diagnosis + fix) | ~60 min | Yes — Rule 6 now documents this |
+| Form 8867 checkbox issues (Q7, Q8) | ~30 min | Yes — verify Yes/No column precisely |
+| Dependent due diligence (all questions) | ~40 min | Yes — fill on first pass |
+| Context window resets (×2) | ~60 min | Partially — work faster |
+| Document review (120-page workpaper) | ~40 min | No — thorough review required |
+
+**New pitfalls discovered:**
+- **99N ↔ Schedule C automatic flow**: When 1099-NEC is on 99N screen linked to a Schedule C, Drake auto-adds it to gross receipts. Schedule C line 1 must only have the NON-1099 portion. This is the #1 trap for Schedule C returns.
+- **Dependent Due Diligence tab**: The dependent screen has a "Due Diligence" tab that must be filled for any dependent qualifying for CTC/ODC. Questions Q1-Q4 and Q10-Q12 all need answers. Also need at least one residency document checkbox checked.
+- **Form 8867 Q7 must be "Yes"**: Q7 asks "Did you ask the taxpayer if credits were disallowed in a prior year?" — answer must be "Yes" (we asked). "No" means we didn't ask, which triggers 4906.
+- **Drake checkbox columns are narrow**: The Yes/No/N/A checkboxes on due diligence screens are very close together. Zoom in to verify which column is actually checked. A single pixel off can check the wrong column.
+- **Direct clicking vs Tab navigation**: For checkboxes that won't respond to direct clicks, use Tab from an adjacent checked box + Space to toggle. This worked for Q4 on the dependent due diligence when direct clicking failed at 10+ different coordinates.
+
+**Corrected return numbers:**
+- Total Income: $130,238
+- Federal Balance Due: $16,509
+- IL Balance Due: $845
+- Total Tax Owed: $17,354
+- EF Status: Clean — green checkmarks, zero errors, Eligible for E.F.
+
+---
+
 ### 2026-04-08 — NAUTILUS INVESTMENTS LLC JEFFERY — EIN: 27-1052073
 **Time:** ~415 minutes (6 hr 55 min) across 4 attempts
 **Target:** 10 min
@@ -160,65 +205,6 @@ Update this file after every 1065 return. This is how the skill gets smarter ove
 - **K-1 QBI MFC field**: When K-1s are exported from partnership/S-Corp returns to a 1040, the QBI entries are auto-created but the MFC (Multi-Form Code) field may be blank. Drake shows a warning dialog but still saves the entry. MFC must be set (typically MFC=1) or the return won't e-file.
 - **K-1 Export Tool location**: In View/Print mode, the export icon is in the toolbar (looks like a box with an arrow). Click it, select the target 1040 SSN, and it exports all K-1 data.
 - **Child Tax Credit age limit**: CTC cannot be taken for a child over age 16. Drake handles this automatically but it appears as a note in the return — not an error.
-
----
-
-### 2026-04-09 — DVORAK, JULIA M — SSN: 320-70-4594
-**Time:** ~25 minutes (across 2 sessions — context compaction mid-return)
-**Target:** 15 min
-**Return type:** 1040 HOH Individual, IL filing, Schedule E rental (Dana Court), Form 4562 depreciation (3 assets), Form 8867 Due Diligence (HOH), 1099-INT
-
-**Summary:** Federal total income $11,239, taxable income $0, total tax $0. IL1040 taxable income $5,539, total tax $274 balance due. CTC not available — Susanna Dvorak (dependent) over age 16. Eligible for E.F. with zero federal EF errors after fixes.
-
-**Errors encountered:**
-1. Federal 500 — Missing ID Information (Required Identification screen — driver's license)
-2. Federal 2408 (×3) — Missing Asset Life on Form 4562 Depreciation Detail (all 3 assets)
-3. Federal 5723 — Due Diligence Questions Incomplete — HOH filing status requires DD1 Head of Household tab
-4. Schedule E address fields — city/state/ZIP entered in wrong fields when using Tab navigation (same issue as prior returns)
-5. View/Print MESSAGES — "missing required data on E Rent and Royalty Income" — Schedule E Question A (1099 payments) not answered and QBI "trade or business" dropdown not set
-6. PIN signature date entered as 2826 instead of 2026
-
-**Root causes:**
-- ID Screen (IDS link from Screen 1) requires either driver's license info or "did not provide" checkbox — not obvious from the main Screen 1
-- Form 4562 Life field was left blank when entering assets — the recovery period (27.5 for residential rental) must be explicitly entered
-- Form 8867 alone is NOT sufficient for HOH due diligence — must also complete DD1 "Head of Household" tab with marital status and home cost documentation
-- Schedule E address Tab navigation sends cursor to unexpected fields — Heads Down Entry (Ctrl+N) is reliable
-- **Blue fields on Schedule E were not filled**: Question A ("Did you make any payments in 2025 that would require you to file Form(s) 1099?") and the QBI "This activity is a trade or business" dropdown are blue required fields that were missed during initial entry. The calculation dialog showed green checkmarks and "Eligible for E.F." but the View/Print MESSAGES page still had errors.
-- PIN date typo: Typed 2826 instead of 2026 for signature date
-
-**Time lost per issue:**
-| Issue | Time Lost | Avoidable? |
-|-------|-----------|-----------|
-| Error 500 — finding ID Screen | ~3 min | Yes — check IDS on every return |
-| Error 2408 — adding Life to 4562 | ~2 min | Yes — always enter Life=27.5 for residential rental |
-| Error 5723 — finding DD1 HOH tab | ~5 min | Yes — always visit DD1 for HOH/EIC/CTC returns |
-| Schedule E address field confusion | ~3 min | Yes — use Heads Down Entry for address |
-| Depreciation method "SL" invalid | ~3 min | Yes — use "ARR" for MACRS residential rental |
-| Date format "07/2002" → "07-20-2002" | ~2 min | Yes — always use full date: MM/DD/YYYY |
-| Exit button not responding on Screen 1 | ~2 min | Partially — use Next button instead |
-| Schedule E blue fields (Q-A, QBI dropdown) | ~5 min | Yes — always fill ALL blue fields on every screen |
-| PIN date typo (2826→2026) | ~2 min | Yes — verify year when typing dates |
-
-**Fix for next time:**
-1. **Always enter Life field on Form 4562** — 27.5 for residential rental property (ARR method)
-2. **Always visit IDS screen** — check "did not provide" if no DL info available
-3. **For HOH returns: always visit DD1 > Head of Household tab** — check marital status and home cost documentation (utility bills, property tax bills)
-4. **Use "ARR" not "SL"** for MACRS 27.5yr residential rental depreciation method
-5. **Use full date format MM/DD/YYYY** — "07/2002" gets parsed as 07-20-2002
-6. **Schedule E address: use Heads Down Entry** for city/state/ZIP to avoid Tab navigation issues
-7. **Always fill ALL blue fields on Schedule E**: Question A (1099 payments — typically "No" for rental), Question B (if A=Yes), and QBI "This activity is a trade or business" dropdown (set to "N" for rental properties)
-8. **Always check View/Print MESSAGES after calculating** — the calculation dialog may show "Eligible for E.F." with green checkmarks but MESSAGES page can still contain errors
-9. **Verify PIN signature date year** — easy to mistype 2026 as 2826
-
-**New pitfalls discovered:**
-- **Error 500 (Missing ID Info)**: The IDS screen (Required Identification) is accessed via the "ID Screen" link on Screen 1. It requires driver's license details OR checking "Taxpayer did not provide a driver's license or state-issued photo ID."
-- **Error 2408 (Missing Asset Life)**: The "Life" column on the Form 4562 summary grid must be populated. For residential rental (ARR method), Life = 27.5.
-- **Error 5723 (HOH Due Diligence)**: Form 8867 handles EIC/CTC/AOTC due diligence questions, but **HOH-specific due diligence** is on a separate screen: DD1 > "Head of Household" tab. Must check marital status (Q1) and home cost documentation (Q4).
-- **DD1 has multiple tabs**: Child, Head of Household, Income, 2nd-4th Business Income. The relevant tab depends on what credits/filing status apply.
-- **CTC age limit**: Child Tax Credit cannot be taken for a child over age 16. Drake automatically excludes but shows a return note (not an error).
-- **Schedule E blue required fields**: Question A ("Did you make any payments in 2025 that would require you to file Form(s) 1099?") and the QBI "This activity is a trade or business" dropdown are blue fields that MUST be filled. For rental properties: Q-A = "No" (typically), QBI trade/business = "N".
-- **"Eligible for E.F." ≠ no errors**: The calculation results dialog can show green checkmarks and "Eligible for E.F." even when View/Print MESSAGES still contains errors. ALWAYS navigate to View/Print and check the MESSAGES node in the left tree. If MESSAGES node is absent, the return is truly clean.
-- **F (Federal Code) field on Schedule E**: The "F" column is Federal Code (0=exclude, blank=include), NOT fair rental days. Fair rental days (line 2) is on the Income/Expenses tab. Entering 365 in the F column triggers a help dialog.
 
 ---
 
