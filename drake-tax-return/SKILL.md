@@ -251,6 +251,16 @@ Every individual screenshot-click-type round-trip costs ~3-5 seconds. A return w
 
 **HDE is not an escape hatch — it is the default, fastest, most reliable way to enter data into any Drake screen.** Pixel-clicking was the old approach. After three consecutive 1040 returns where HDE dramatically outperformed direct clicking (including 60+ min wasted on Form 8867 in Sood, 20+ min on Form 8863 in Link), the policy is now: **turn HDE on at the top of every screen that has more than a handful of fields and stay in HDE until the screen is done.** Switch back to direct clicking only for the narrow exceptions listed below.
 
+**HARD ENFORCEMENT RULE — read this before every screen:**
+
+Before executing ANY `computer_batch` that touches a Drake data entry screen, you MUST write one line of text in your own turn stating which mode you're using. One of:
+- `"HDE mode — pressing Ctrl+N first"` (the expected default)
+- `"Direct click — this screen qualifies for exception X because Y"` (must cite a specific exception from the list below)
+
+If you catch yourself about to pixel-click a field that lives inside a screen grid without having declared an exception, STOP. That is a skill violation. Back up, press Ctrl+N, and enter HDE. The user has flagged this same drift five times across Sood, Dvorak, Link, and Nielsen — it is the #1 cause of wasted time on this skill and the #1 reason the user has to repeat themselves. No more.
+
+The drift happens when a screen "looks simple" (one or two fields) or when you already have a field coordinate in memory from a prior screenshot. Both are traps: "just this one click" turns into ten, and cached coordinates go stale the moment Drake's layout shifts. Always default to HDE.
+
 **Why HDE wins over pixel-clicking:**
 - **Resolution-independent.** Field 17 is field 17 regardless of window size, DPI, Drake version, or theme. Coordinate maps break the instant Drake's layout shifts.
 - **Unambiguous.** No risk of hitting the adjacent Yes/No/N/A column on a due-diligence checkbox — type the field number and you land exactly on that input.
@@ -268,19 +278,31 @@ Every individual screenshot-click-type round-trip costs ~3-5 seconds. A return w
 
 For each field, HDE gives you an "input box" where you type the field number and a "value box" where you type the value. The coordinates below are what Sood/Dvorak/Link all used on Drake Tax 2025 — verify with a screenshot once per screen, then batch.
 
+**For text / amount / date fields** (anything where you're typing a value):
 ```
 click (548, 87)    # field-number input box
 type "17"          # the HDE number of the field you want
 key Return
 click (585, 91)    # value input box
-type "X"           # or the text/amount/date you want
+type "2500"        # the text/amount/date you want
 key Return
 # repeat for next field — no screenshot needed between fields
 ```
 
+**For checkbox fields — CRITICAL PATTERN, verified on Nielsen:**
+```
+click (548, 87)    # field-number input box
+type "17"          # the HDE number of the checkbox
+key Return
+key space          # SPACE toggles the checkbox
+key Return         # commit the toggle
+```
+
+**DO NOT use `type "X"` for checkboxes.** An earlier version of this skill told you to type `X + Return` — that is WRONG and cost real time on Sood, Dvorak, Link, and Nielsen before it was figured out. The working pattern is literally `field_num → Return → Space → Return`. The `Space` key is what actually flips the box; `Return` commits and advances.
+
 Pack as many of these as you need into one `computer_batch`. A full Form 8867 (12+ checkboxes) takes one batch and one verification screenshot instead of dozens of click-screenshot rounds.
 
-**Checkbox values in HDE:** type `X` + Return to check, `Delete` (or clear the value box and Return) to uncheck. For Yes/No/N/A groups, each column has its own field number — check the correct one, uncheck the others in the same group if needed.
+**Yes/No/N/A groups:** each column has its own field number. To set Q7 to "Yes", toggle the "Yes" column's field number ON with Space, then toggle the "No" and "N/A" columns for that same question OFF with another Space (space toggles, so if they're already off you'll turn them on — check with a screenshot first). For a fresh screen with nothing selected yet, just Space-toggle the one correct column.
 
 **Text, amount, date values:** just type the value in the value box and press Return. HDE handles tabbing out automatically.
 
