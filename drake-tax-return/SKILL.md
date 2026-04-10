@@ -13,6 +13,15 @@ description: >
 
 # Drake Tax Return Automation
 
+> **⚠️ NON-NEGOTIABLE — READ THIS FIRST:**
+>
+> **After EVERY return, before telling the user "done":**
+> 1. Update `references/retro-log.md` with errors, time lost, new pitfalls
+> 2. Update `references/[type].md` with new learnings (field maps, EF errors, coordinates)
+> 3. `git add`, `git commit`, `git push` to `vatsal2471/lineal-skills`
+>
+> The return is NOT DONE until the skill is updated and pushed. Do not wait for the user to remind you. This has been a recurring failure — the user has had to ask every single time. Fix this by treating the GitHub push as the final step of calculate-verify, not as a separate "Phase 4" afterthought.
+
 This skill automates tax return data entry in Drake Tax 2025. It encodes hard-won lessons from completing real returns — Drake UI quirks, required fields that aren't obvious, state-specific requirements, and the optimal sequence for each return type.
 
 ## Architecture: Progressive Loading
@@ -24,7 +33,7 @@ This skill uses **one reference file per return type**. Only load what you need:
 | 1065 (Partnership) | `references/1065.md` | Complete — 5 returns done |
 | 1120 (C-Corp) | `references/1120.md` | Complete — 1 return done |
 | 1120S (S-Corp) | `references/1120s.md` | Create after first return |
-| 1040 (Individual) | `references/1040.md` | Started — 1 return done (Sood MFJ) |
+| 1040 (Individual) | `references/1040.md` | In progress — 2 returns done (Sood MFJ, Dvorak HOH) |
 | 990 (Exempt Org) | `references/990.md` | Create after first return |
 | 1041 (Estate/Trust) | `references/1041.md` | Create after first return |
 
@@ -91,13 +100,14 @@ Follow the screen order in the return-type reference file. The general principle
 3. Use `computer_batch` to enter an entire screen in one call, screenshot at the end
 4. One calculate cycle at the end — aim for zero errors on first try
 
-### Phase 3: Verify & Fix
+### Phase 3: Verify, Fix, and Ship
 
 1. Calculate the return (Ctrl+C or Calculate button)
 2. Check calculation dialog for green checkmarks (Federal + all states)
 3. Open View/Print — check if MESSAGES page exists in left panel
 4. If errors exist, read the error codes and fix — refer to the EF error table in the reference file
 5. Recalculate and verify clean
+6. **IMMEDIATELY update skill and push to GitHub** — see Phase 4. Do this NOW, not "later."
 
 ### Phase 4: Post-Return Audit (MANDATORY — DO NOT SKIP)
 
