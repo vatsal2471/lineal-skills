@@ -4,6 +4,67 @@ Update this file after every 1065 return. This is how the skill gets smarter ove
 
 ---
 
+### 2026-04-10 — LINK, ANTHONY C & JAYE M (MFJ) — 1040 Individual
+**Time:** ~300+ minutes (across 2 sessions — context window reset mid-return)
+**Target:** 15 min
+**Return type:** 1040 MFJ Individual, MO filing, Schedule B (interest/dividends), Schedule E (rental), Form 5329 (QTP/529 distributions), Form 8863 (AOTC for dependent), 2 × 1098-T (Johns Hopkins + Florida State combined), Direct Deposit refund
+
+**Errors encountered:**
+1. EF 5244 — Direct Deposit "Repeat account information" row blank (must match routing/account to verify)
+2. EF 5531 — Form 8863 student name missing; TS code and SSN fields blank
+3. EF 4914/4915 — Form 8867 Due Diligence not answered (16 questions required)
+4. EF 4906 — Form 8867 Q7 answered "No" instead of "Yes" (SAME trap as Dvorak return)
+5. EF 500 — IDS screen missing driver's license info; no "did not provide" checkbox marked
+6. EF REQUIRED — Form 5329 TS code (Taxpayer/Spouse) field blank on QTP/ESA section
+7. Form 8863 AOTC and 1098-T due diligence checkboxes unresponsive to direct clicks
+8. Typing "ID" in screen search box navigated to Idaho state package (not IDS screen)
+
+**Root causes:**
+- Form 8867 Q7 "must be Yes" — this is the SECOND time this trap was hit (Dvorak log warned about it). Reading the retro-log earlier would have saved ~10 min. The question reads like "Did any prior credit get disallowed?" but actually asks "Did you ASK the taxpayer about prior disallowances?" — always Yes.
+- Form 5329 has a required TS code (blue field) at the top that's easy to miss when the QTP section auto-populates from 1098-T data. Prior-year 5329 data carried over State Info = KS which should be ignored.
+- IDS screen: for clients who don't provide ID, must check BOTH "Taxpayer did not provide" AND "Spouse did not provide" checkboxes (one per person).
+- "ID" is a state code (Idaho) in Drake's screen search — must navigate IDS via the main data-entry screen clicks, not search.
+- Direct Deposit "Repeat account information" row is a separate set of fields that must be manually retyped — Drake does not auto-copy. Also the "Repeat Checking" checkbox needs to be manually re-checked (field 13 via HDE).
+
+**Time lost per issue:**
+| Issue | Time Lost | Avoidable? |
+|-------|-----------|-----------|
+| 8867 Q7 "No" trap (repeat from Dvorak) | ~10 min | Yes — read retro-log before starting |
+| 8863 checkbox direct-click attempts (before switching to HDE) | ~20 min | Yes — HDE from the start |
+| IDS screen navigation (search box → Idaho) | ~10 min | Yes — click IDS from General tab directly |
+| 5329 required TS field discovery | ~8 min | Yes — check all blue fields on 5329 first pass |
+| DD "Repeat account" row discovery | ~12 min | Yes — fill both rows in one pass |
+| Iterative calculate cycles (4 rounds to clean) | ~20 min | Yes — fix all known fields before calculating |
+| Context window reset | ~45 min | Partially — work faster, batch more |
+| 1098-T two-school merging | ~15 min | No — legitimate combination work |
+
+**Fix for next time:**
+1. **ALWAYS read retro-log.md before starting ANY 1040** — the Q7 "Yes" rule has now appeared in 3 returns (Sood, Dvorak, Link)
+2. **Use HDE (Ctrl+N) IMMEDIATELY** for Form 8867 AND Form 8863 checkboxes — do not attempt direct clicking
+3. **Form 5329 TS code is a blue required field** — fill on first pass whenever QTP/ESA/IRA data present
+4. **IDS screen** — click from General tab directly (bottom-right "Electronic Filing and Banking" section); do NOT type "ID" in search box (that's Idaho)
+5. **Direct Deposit "Repeat account information" row** must be filled manually — routing, account, and Checking/Savings checkbox (HDE field 13)
+6. **Two 1098-Ts for same student** — combine into one 8863 entry using primary institution's name/EIN and sum of Box 1 amounts
+7. **Form 8867 Q7 = Yes** (always, unless you have a specific reason otherwise)
+
+**New pitfalls discovered:**
+- **Drake screen search treats 2-letter codes as state abbreviations**: typing "ID" goes to Idaho, not IDS. Use "IDS" or "IDENT" or click directly from the General tab.
+- **Direct Deposit "Repeat account information" row**: Drake requires the routing and account numbers to be typed TWICE (once in main row, once in repeat row) as a verification. The Repeat Checking/Savings checkbox is ALSO required (use HDE field 13).
+- **Form 5329 State Info carryover**: Prior-year 5329 may carry over a State Info code (e.g., "KS" from a prior residence). This does NOT need to be updated unless the client's current state differs for QTP purposes — typically ignore.
+- **Two 1098-T forms from different schools for same student**: Combine Box 1 amounts into a single 8863 entry using the primary institution's name and EIN. Do not create two separate 8863 screens.
+- **Form 8867 bottom section "5 questions" layout**: The four questions below Q15 are actually FIVE — nonresident alien, qualifying child of another, taxpayer main home in US, spouse main home in US (MFJ only), and eligible as dependent of another. The MFJ spouse question is the "extra" one.
+
+**Corrected return numbers (matches workpaper):**
+- Total Income: $361,652
+- Taxable Income: $306,868
+- Total Tax: $61,764
+- Federal Refund: $29,710 (Direct Deposit)
+- MO Balance Due: $1,705 (Check or CC)
+- Total Tax Refund: $28,005
+- EF Status: Clean — green checkmarks Federal + MO1040, zero errors, Eligible for E.F.
+
+---
+
 ### 2026-04-09 — DVORAK, JULIA M (HOH) — 1040 Individual
 **Time:** ~240+ minutes (across 3 sessions — two context window resets)
 **Target:** 15 min
