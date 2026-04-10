@@ -48,23 +48,53 @@ This skill uses **one reference file per return type**. Only load what you need:
 **Before doing ANY work**, pull the latest version of this skill from GitHub to ensure you have all learnings from previous sessions:
 
 ```bash
-# Load persistent GitHub PAT (saved across sessions at user-owned 600-perm location)
-PAT_FILE=/sessions/$(basename $PWD)/mnt/.claude/session-env/.github-pat
-if [ -f "$PAT_FILE" ]; then
-  GITHUB_PAT=$(cat "$PAT_FILE")
-  REMOTE_URL="https://x-access-token:${GITHUB_PAT}@github.com/vatsal2471/lineal-skills.git"
+# Load GitHub PAT. Checked in this priority order:
+#   1. $GITHUB_PAT env var — TRULY persistent if user set it in Claude Code settings
+#   2. Session-local credential helper at /tmp/.git-session-credentials (this session only)
+#   3. Nothing — prompt user to paste PAT, then save to BOTH #1's session env AND the helper
+#
+# IMPORTANT — READ THIS CAREFULLY:
+# There is NO persistent writable filesystem location inside this sandbox. Earlier
+# versions of this skill claimed to save the PAT at mnt/.claude/session-env/.github-pat
+# and called it "persistent" — that was WRONG. mnt/.claude is mounted from a
+# session-local UUID path (local_<UUID>) and is wiped every new session. Do not
+# re-introduce that mechanism. The ONLY way to get a PAT to survive across sessions
+# is for the user to set it as a Claude Code env var ($GITHUB_PAT).
+
+if [ -n "$GITHUB_PAT" ]; then
+  echo "Using PAT from \$GITHUB_PAT env var (persistent)"
+elif [ -f /tmp/.git-session-credentials ]; then
+  # Previously set this session, not persistent across sessions
+  GITHUB_PAT=$(sed -n 's|.*x-access-token:\([^@]*\)@.*|\1|p' /tmp/.git-session-credentials | head -1)
+  echo "Using PAT from session credential helper (session-local)"
 else
-  REMOTE_URL="https://github.com/vatsal2471/lineal-skills.git"
-  echo "WARNING: No PAT found at $PAT_FILE — push will fail until user provides one"
+  echo "NO PAT AVAILABLE — stop and ask the user:"
+  echo "  'I need a fine-grained GitHub PAT for vatsal2471/lineal-skills (Contents: Read and write).'"
+  echo "  'For true persistence across sessions, set GITHUB_PAT as a Claude Code env var.'"
+  echo "  'Otherwise I'll keep asking for it every session — this is a sandbox limitation, not a skill bug.'"
+  # After user pastes PAT, save to session credential helper:
+  #   printf 'https://x-access-token:%s@github.com\n' "$GITHUB_PAT" > /tmp/.git-session-credentials
+  #   chmod 600 /tmp/.git-session-credentials
+  #   git config --global credential.helper 'store --file=/tmp/.git-session-credentials'
 fi
+
+REMOTE_URL="https://x-access-token:${GITHUB_PAT}@github.com/vatsal2471/lineal-skills.git"
 
 # Clone or pull the latest skill from GitHub
 cd /sessions/$(basename $PWD)
 if [ -d github-repo ]; then
-  cd github-repo && git remote set-url origin "$REMOTE_URL" && git pull
+  cd github-repo && git remote set-url origin "$REMOTE_URL" && git pull && git remote set-url origin "https://github.com/vatsal2471/lineal-skills.git"
 else
-  git clone "$REMOTE_URL" github-repo
+  git clone "$REMOTE_URL" github-repo && cd github-repo && git remote set-url origin "https://github.com/vatsal2471/lineal-skills.git"
 fi
+
+# Configure git identity and credential helper for the rest of the session
+cd /sessions/$(basename $PWD)/github-repo
+git config user.email "vatsal@lineal.cpa"
+git config user.name "Vatsal"
+git config credential.helper "store --file=/tmp/.git-session-credentials"
+printf 'https://x-access-token:%s@github.com\n' "$GITHUB_PAT" > /tmp/.git-session-credentials
+chmod 600 /tmp/.git-session-credentials
 ```
 
 The repo structure is:
@@ -86,8 +116,11 @@ lineal-skills/
 
 Read the reference files and retro-log from the cloned repo, NOT from the local skill directory — the repo is always the source of truth.
 
-**GitHub PAT for pushing (persistent, auto-loaded):**
-The user's PAT is saved at `/sessions/$(basename $PWD)/mnt/.claude/session-env/.github-pat` (mode 600, owner-only). The Phase 0 block above reads it and injects into the origin URL automatically. If the file is missing or the push returns 401/403, ask the user for a fresh fine-grained PAT scoped to `vatsal2471/lineal-skills` with Contents: Read and write, then save it to that same path with `chmod 600`.
+**GitHub PAT — persistence reality check:**
+
+The Phase 0 block above tries three sources in order: (1) `$GITHUB_PAT` env var, (2) `/tmp/.git-session-credentials` file from earlier in this same session, (3) prompt the user. **Only option 1 survives across sessions** — and only if the user has added `GITHUB_PAT` to their Claude Code environment variables. Everything else in this sandbox is session-local.
+
+If the user is being asked for the PAT every session, tell them plainly: *"This is a sandbox limitation — `mnt/.claude/` is mounted from a per-session UUID path, so there's no persistent writable location. To stop being asked, add `GITHUB_PAT=<your_pat>` as a Claude Code env var."* Do **not** claim to save the PAT to `mnt/.claude/session-env/` or any other in-sandbox path and call it persistent — that claim is false and has burned the user multiple times.
 
 ### Phase 1: Pre-process (before touching Drake)
 
@@ -146,14 +179,15 @@ Follow the screen order in the return-type reference file. The general principle
    ```
    The commit message should summarize what was learned (e.g., "Sood 1040: 8867 Heads Down Entry, K-1 QBI MFC fix, Q7a trap").
    
-   **If git push fails (no auth):** The persistent PAT at `/sessions/$(basename $PWD)/mnt/.claude/session-env/.github-pat` should have been loaded in Phase 0. If the file is missing or expired, ask the user for a fresh fine-grained PAT for `vatsal2471/lineal-skills` (Contents: Read and write), then save it and retry:
+   **If git push fails with auth error:** Phase 0 should have configured a session credential helper at `/tmp/.git-session-credentials`. If the push still fails, the helper is missing or expired. Ask the user for a fresh fine-grained PAT for `vatsal2471/lineal-skills` (Contents: Read and write), then:
    ```bash
-   PAT_FILE=/sessions/$(basename $PWD)/mnt/.claude/session-env/.github-pat
-   printf '%s' '<PAT>' > "$PAT_FILE" && chmod 600 "$PAT_FILE"
-   GITHUB_PAT=$(cat "$PAT_FILE")
-   git remote set-url origin "https://x-access-token:${GITHUB_PAT}@github.com/vatsal2471/lineal-skills.git"
+   GITHUB_PAT='<paste from user>'
+   printf 'https://x-access-token:%s@github.com\n' "$GITHUB_PAT" > /tmp/.git-session-credentials
+   chmod 600 /tmp/.git-session-credentials
+   git config credential.helper 'store --file=/tmp/.git-session-credentials'
    git push origin main
    ```
+   Do NOT try to write the PAT to `mnt/.claude/session-env/` and claim it'll persist — it won't. If the user wants cross-session persistence, tell them to set `GITHUB_PAT` as a Claude Code env var.
 
 5. **Package and present** the updated `.skill` file so the user can reinstall with new learnings:
    ```bash
