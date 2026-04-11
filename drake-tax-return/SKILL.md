@@ -208,7 +208,19 @@ The Phase 0 block above checks four sources in order: (1) persistent mcpb-cache 
 
 ### Phase 1: Pre-process (before touching Drake)
 
-1. **Read source documents** — prior-year PDF return + current-year income data (Excel/CSV/PDF)
+1. **Read source documents — EVERY PAGE OF EVERY DOCUMENT (repeat offender, flagged 2026-04-11).** Skimming is a Phase 1 failure and the #1 way to ship a wrong return.
+
+   **Mandatory document intake procedure:**
+   - **(a) Enumerate.** List every uploaded file with its full path. Use `ls /sessions/*/mnt/uploads/` or the paths the user provided. Print a numbered list — this is the "documents provided" ground truth.
+   - **(b) Get page counts BEFORE reading.** For each PDF: `python3 -c "from pypdf import PdfReader; print(len(PdfReader('<file>').pages))"` or `pdfinfo <file>`. For each .xlsx: list sheets with row counts. Print `filename → N pages` for each.
+   - **(c) Read every page.** PDFs over 10 pages need `pages:` ranges with the `Read` tool (20 pages/call cap), so read in chunks and keep a running counter. After each read, log `<filename>: pages 1-N read, N/N complete`. Do not move to (d) until every file's counter equals its total.
+   - **(d) Read every sheet of every spreadsheet.** An 8-sheet workpaper is 8 documents, not 1. Do not assume Sheet1 is all that matters.
+   - **(e) Do NOT rely on the Cowork context-window preview.** When a user uploads a PDF, Cowork sometimes renders the first few pages inline as images. That preview is NOT a substitute for `Read`-ing the file — it's truncated and always misses pages past the preview budget. If a document is on disk, open it with the appropriate tool regardless of what the inline render shows.
+   - **(f) Cross-check.** The plan output must contain a "Documents read" section listing every file + "pages X of X" for each. If counts don't match step (a), Phase 1 isn't finished — go back.
+   - **Exception:** if the user explicitly excludes a document (e.g., "skip the Pershing 1099, that's a different trust"), document the exclusion in the plan so Phase 4 audit can match it.
+
+   **Why this keeps burning us:** tax workpapers bury critical data on arbitrary pages — a K-1 on page 23 of a 40-page PDF, a 1099-R stuck between brokerage statement pages, a Schedule E rental disclosed on page 7 of a "cover letter." Missing it at Phase 1 means either a wrong return or a mid-Phase-2 re-plan. Phase 1 is where reading is cheapest and missing is smallest — read everything there, once, completely. See 1040.md Rule 10 for the full policy.
+
 2. **Run pre-processing** if applicable:
    ```bash
    python scripts/preprocess.py \
@@ -272,6 +284,8 @@ Follow the screen order in the return-type reference file. The general principle
 2. **Document what happened** — update `references/retro-log.md` with:
    - Client name, EIN, return type, date
    - Actual time spent vs target, plus the audit findings from step 1
+   - **Documents read** — explicit list of every uploaded file with `pages X of X` or `sheets Y of Y` confirmation. If this line is missing or shows incomplete counts, that's a Rule 10 violation — call it out as a discipline finding in the retro and note what was missed. No return is "done" until this line is present and complete.
+   - **HDE atlas capture audit** — which screens did this return encounter that were in 📋 TODO state in the atlas? For each: was the field-number overlay captured and transcribed to the atlas? If no, that's a Rule 27 violation and goes in the retro as a discipline finding.
    - Every error encountered with root cause and time lost
    - Every navigation issue that slowed entry
    - New pitfalls or tricks discovered
