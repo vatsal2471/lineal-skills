@@ -4,6 +4,71 @@ Update this file after every 1065 return. This is how the skill gets smarter ove
 
 ---
 
+### 2026-04-11 — HAMMOUD, ROCHANA & PATTERSON, RYAN AUSTIN (MFJ) — 1040 Individual, IL resident
+
+**Time:** ~120 minutes (continued across 2 sessions; context window compacted once mid-return)
+**Target:** 15 minutes
+**Return type:** 1040 MFJ IL resident. Income: 2× W-2 (Rochana + Ryan), 1× 1099-MISC box 8 substitute payments (M1 Finance $139), 1× 1099-R Fidelity early distribution code 1 ($682 gross, $136 w/h → Form 5329 10% penalty), 4× 8949 lines (JPM Chase ST Box A IREN, JPM LT Box E IBIT noncovered, M1 ST Box A summary w/ wash sale, M1 LT Box D summary), student loan interest attempt (auto-disallowed MAGI), DD for IL refund, Federal balance due.
+
+**Final numbers (clean, both GREEN):**
+- Federal: Total Income $397,230 / Taxable $365,729 / Total Tax $74,496 / Balance Due $261 (Check or CC)
+- IL 1040: Total Income $396,548 / Taxable $390,840 / Total Tax $19,347 / Refund $85 (Direct Deposit)
+- Total Tax Owed (net): $176
+- EF Status: Clean — Federal + IL1040 green checkmarks, Eligible for E.F.
+
+**Errors encountered:**
+1. **EF Federal 5310 INVALID DATE (×2) on 8949** — M1 ST and M1 LT summary rows had both Acquired=VARIOUS AND Sold=VARIOUS. Drake rejects Sold=VARIOUS for e-file. Fix: set Sold = `12-31-2025` for summary rows; Acquired can stay VARIOUS. Also set S/L column explicitly (S for ST, L for LT) — required when Acquired=VARIOUS.
+2. **EF Federal 5310 INVALID DATE on 8949 row 2 (JPM LT IBIT)** — Acquired=VARIOUS, Sold=12-05-2025, but S/L column was blank. When Acquired=VARIOUS, Drake requires the S/L column (field 5 on the detail, or direct edit the grid column) to be explicitly L or S. Fix: clicked S/L column in grid, typed L, Tab.
+3. **EF Federal 500 MISSING ID INFORMATION** — IDS screen needs either ID entered OR checkbox 23/24 (taxpayer) and 25/26 (spouse). Fix: HDE field 24 Space + HDE field 26 Space. Default for both = "did not provide ID."
+4. **EF Federal 5084/672 MISSING PIN** — PIN field 2 (ERO's PIN signature) was empty after HDE entry. SAME bug as Patel 2026-04-11: HDE does not persist value on this password-masked field. Fix: Ctrl+N to exit HDE, direct-click field 2 at (720, 184), type 75757, Tab. This time it stuck.
+5. **EF IL 9074 PIN mismatch** — downstream of #4; resolved automatically once federal PIN field 2 was committed via direct click.
+6. **1099-R recipient override fields 16-21 auto-populated** with "Rochana / Hammoud / 550 N Saint Clair St / Chicago / IL / 60611" from unknown source (possibly carry-forward from prior-year return or an earlier aborted entry). These are the recipient OVERRIDE section ("if different from screen 1") — must be cleared when the recipient is the primary TP (on screen 1), otherwise the override fights the primary record. Fix: HDE fields 16-21, Home / Shift+End / Delete / Return for each.
+7. **1099-R city auto-populated as "Latonia" from ZIP 41015 lookup** — Drake's ZIP-to-city lookup overrode my entered "COVINGTON". USPS considers 41015 = Latonia (Covington is a secondary name). Acceptable for e-file; do not fight Drake on this. The 1099-R form says Covington but Drake's auto-fill wins.
+8. **1099-MISC payer EIN visual "blue shading" trap** — EIN field appeared blue-shaded (looks masked) but was genuinely EMPTY. Verified by HDE on field 5 — populated as 47-3253791 once typed. Lesson: blue shading on EIN/SSN fields is privacy masking color AND it's the background color of blank required fields. Check via HDE before concluding a required field is "already filled."
+9. **Drake 8949 field 5 "Type" is NUMERIC, not A/B/C** — Drake's grid column for 1099-B reporting type rejects `A`/`B`/`C`. Valid values are `1` (Basis reported, Box A/D), `2` (Basis not reported, Box B/E), `3` (Not on 1099-B, Box C/F). This is a persistent pitfall — re-documented this return.
+10. **8949 description "20 IREN LTD" failed via HDE**, required direct click on description grid cell and direct-typing. HDE text entry on the description column of the 8949 grid is unreliable for alphanumeric content.
+11. **DD field 2 state/city selection IS a dropdown with state codes** (confirmed again this return): set to `A` = "All Eligible ST/City Tax Types Not Indicated Elsewhere" as the catch-all when any state refund may go to this account. Field 1 "Federal selection" IS a Y/N dropdown: set to Y.
+12. **Student loan interest deduction auto-adjusted to 0** — MAGI phaseout at high income (~$397k AGI) completely disallows student loan interest deduction ($85k/$170k MFJ phaseout, fully out at $200k MFJ 2025). This is an auto-adjustment by Drake, not an error, but shows up as "Return Notes: Student Loan Interest Deduction was Adjusted to: 0". For MFJ clients over ~$200k AGI, skip 1098-E entry entirely next time to save the round-trip.
+13. **"DD or BANK screen entered, but return does not have a refund"** — Federal refund = $0 (balance due $261), so the DD federal selection is ignored. This is a Return Note, not an error. DD is still used for IL refund ($85) via field 2 = A. Acceptable to leave DD Federal selection = Y; Drake just ignores it.
+
+**Root causes:**
+- **HDE PIN field 2 non-persistence is now confirmed on TWO returns** (Patel + Hammoud). This is a deterministic bug in the HDE path for password-masked fields, not a flake. Direct click is the permanent workaround.
+- **8949 VARIOUS in Sold date is invalid for e-file.** Must use `12-31-YYYY` for summary rows. Acquired can be VARIOUS without issue, but Sold must be an actual date.
+- **8949 S/L column is required when Acquired=VARIOUS.** Even if 1099-B type (field 5) indicates LT (Box D/E = types 1/2 in long-term groups), Drake still wants the explicit S/L column set when Acquired is VARIOUS.
+- **1099-R recipient override fields 16-21** can carry forward from aborted entries or prior-year conversions. Always verify they are blank when the recipient is on screen 1, and clear them if not.
+- **1099-R ZIP auto-fill wins over typed city name.** If the 1099-R says "Covington" but ZIP is 41015 (Latonia), Drake will display Latonia. Don't fight it.
+- **Student loan interest MAGI phaseout is silent.** Drake auto-adjusts to 0; no error, just a Return Note. Skip the entry for high-MAGI MFJ clients (>$200k AGI 2025).
+
+**Time lost per issue:**
+| Issue | Time Lost | Avoidable next time? |
+|-------|-----------|----------------------|
+| Discovering HDE PIN field 2 non-persistence (again) | ~8 min | **YES** — rule exists from Patel, forgot to apply it. Must read retro-log Phase 0 entries before starting PIN. |
+| 8949 VARIOUS sold date EF 5310 | ~5 min | Yes — always use 12-31-YYYY for summary rows |
+| 8949 S/L column blank on VARIOUS row | ~3 min | Yes — always set S/L when Acquired=VARIOUS |
+| 1099-R recipient override fields 16-21 auto-filled | ~5 min | Yes — always sanity-check fields 16-21 blank on first 1099-R entry |
+| Context window compaction mid-return | ~20 min | Partial — long returns should batch harder at front, less screenshot overhead |
+| 8949 field 5 letters vs numbers (A→1 conversion) | ~3 min | Yes — already documented, re-read 1040.md before 8949 entry |
+
+**Fix for next time:**
+1. **Before entering PIN screen: read Patel 2026-04-11 retro entry.** Do NOT use HDE for field 2 ERO's PIN. Direct click (720, 184), type 75757, Tab.
+2. **8949 summary row template (default for every M1/Robinhood/etc. summary):** Acquired=VARIOUS, Sold=`12-31-YYYY`, S/L=S or L (REQUIRED when Acquired=VARIOUS), Field 5=1 (Box A/D covered) or 2 (Box B/E noncovered) or 3 (Box C/F not on 1099-B).
+3. **1099-R first action: Ctrl+N → field 16 Home Shift+End Delete.** Pre-emptively clear recipient override fields 16-21 before entering any payer data. If they were blank, the delete is a no-op; if they weren't, you've avoided a mystery e-file error later.
+4. **High-MAGI MFJ rule:** if AGI > $200k MFJ, skip 1098-E student loan interest entry. Drake will auto-adjust to 0 anyway; save the roundtrip.
+5. **IDS screen first-pass template:** HDE field 24 Space Return, HDE field 26 Space Return. Default = "did not provide ID" for both. Skip the driver's license block entirely unless the client has submitted ID.
+6. **Pre-flight retro-log scan:** at the start of every 1040 return, grep retro-log.md for "1040" entries and read the "Fix for next time" sections. This is where the discipline slippage is — the rules exist, they just don't get applied.
+
+**New pitfalls discovered:**
+- **1099-R recipient override fields 16-21** can contain stale data from prior attempts. First action on any fresh 1099-R screen: clear fields 16-21.
+- **8949 S/L column is mandatory when Acquired=VARIOUS** even if 1099-B type column already indicates ST/LT via box type.
+- **8949 Sold=VARIOUS is invalid for e-file.** Use `12-31-YYYY`.
+
+**Discipline findings:**
+- **I forgot the HDE PIN field 2 rule from Patel (4 days ago).** This is the exact kind of repeat-cost that the skill exists to prevent. The rule was written, committed, pushed, and I still re-discovered the bug from scratch. The issue is that I don't re-read retro-log.md at the start of each session — I only read 1040.md. Adding a rule: **Phase 1 must include `grep -A5 "Fix for next time" retro-log.md | head -80` as a mandatory step.**
+- Context window compaction mid-return cost ~20 minutes of recovery. For long returns, batch more aggressively up front to reduce screenshot/round-trip count.
+- Calculate cycle count: 2 (would have been 1 if HDE PIN field 2 rule had been applied from the start).
+
+---
+
 ### 2026-04-11 — SKILL BUG FIX: Phase 0 SESSION_ROOT auto-detection picked the wrong user's session
 
 **Context:** After completing Patel, the final `git push` failed even though the PAT was sitting in the persistent mcpb-cache store exactly where the skill expects it. The user asked "why does this keep happening?" — which forced an actual root-cause investigation instead of another PAT-reprompt.
