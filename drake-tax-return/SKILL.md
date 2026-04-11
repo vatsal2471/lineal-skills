@@ -73,21 +73,29 @@ This skill uses **one reference file per return type**. Only load what you need:
 # Do NOT reintroduce mnt/.claude/session-env/ or any path containing local_<UUID>
 # and call it persistent — those are all wiped between sessions.
 
-PERSIST_DIR='/sessions/pensive-blissful-fermat/mnt/.remote-plugins/plugin_01GC5sHmfRpUwySPemYHW7n5/.mcpb-cache'
-# ^ Replace pensive-blissful-fermat with $(basename /sessions/*) at runtime.
+# CRITICAL: Derive the session directory at runtime — NEVER hardcode a session UUID.
+# Every session gets a fresh /sessions/<adjective-adjective-name>/ mount, and if you
+# hardcode a previous session's name, the whole PAT lookup fails with ENOENT and
+# falls through to prompting the user (which has burned this workflow many times).
+SESSION_ROOT=$(ls -d /sessions/*/ 2>/dev/null | head -1 | sed 's|/$||')
+PERSIST_DIR="$SESSION_ROOT/mnt/.remote-plugins/plugin_01GC5sHmfRpUwySPemYHW7n5/.mcpb-cache"
 PERSIST_PAT="$PERSIST_DIR/.github-pat"
-SKILLS_ROOT_PAT='/sessions/pensive-blissful-fermat/mnt/.claude/skills/.github-pat'
+SKILLS_ROOT_PAT="$SESSION_ROOT/mnt/.claude/skills/.github-pat"
 
-if [ -s "$PERSIST_PAT" ]; then
+# NOTE on /tmp/.git-session-credentials: this file is often present but owned by
+# nobody:nogroup with mode 600, which means the CURRENT session's user can neither
+# read nor write it (stale from a previous namespace mapping). Always test with -r
+# (readable), NOT -f (exists), or the fall-through logic silently dead-ends.
+if [ -r "$PERSIST_PAT" ] && [ -s "$PERSIST_PAT" ]; then
   GITHUB_PAT=$(cat "$PERSIST_PAT")
   echo "Using PAT from persistent mcpb-cache ($PERSIST_PAT)"
-elif [ -s "$SKILLS_ROOT_PAT" ]; then
+elif [ -r "$SKILLS_ROOT_PAT" ] && [ -s "$SKILLS_ROOT_PAT" ]; then
   GITHUB_PAT=$(tr -d '\r\n ' < "$SKILLS_ROOT_PAT")
   echo "Using PAT from persistent skills-root fallback ($SKILLS_ROOT_PAT)"
   # Mirror into mcpb-cache for faster access next session
   mkdir -p "$PERSIST_DIR" 2>/dev/null
   printf '%s' "$GITHUB_PAT" > "$PERSIST_PAT" && chmod 600 "$PERSIST_PAT" 2>/dev/null
-elif [ -f /tmp/.git-session-credentials ]; then
+elif [ -r /tmp/.git-session-credentials ]; then
   GITHUB_PAT=$(sed -n 's|.*x-access-token:\([^@]*\)@.*|\1|p' /tmp/.git-session-credentials | head -1)
   echo "Using PAT from session credential helper (session-local)"
 else
@@ -111,14 +119,33 @@ else
   git clone "$REMOTE_URL" github-repo && cd github-repo && git remote set-url origin "https://github.com/vatsal2471/lineal-skills.git"
 fi
 
-# Configure git identity and session credential helper for the rest of the session
+# Configure git identity for the rest of the session.
 cd "$SESSION_DIR/github-repo"
 git config user.email "vatsal@lineal.cpa"
 git config user.name "Vatsal"
-git config credential.helper "store --file=/tmp/.git-session-credentials"
-printf 'https://x-access-token:%s@github.com\n' "$GITHUB_PAT" > /tmp/.git-session-credentials
-chmod 600 /tmp/.git-session-credentials
+
+# Only set up credential.helper if /tmp/.git-session-credentials is actually
+# writable by us. If it's owned by nobody:nogroup (stale from a prior namespace),
+# git will emit "unable to write credential store" on every push — a non-fatal
+# warning but a confusing one. Instead, unset the helper and rely on the PAT
+# being embedded in the remote URL for pushes.
+if [ -w /tmp/.git-session-credentials ] || ( : > /tmp/.git-session-credentials 2>/dev/null ); then
+  git config credential.helper "store --file=/tmp/.git-session-credentials"
+  printf 'https://x-access-token:%s@github.com\n' "$GITHUB_PAT" > /tmp/.git-session-credentials
+  chmod 600 /tmp/.git-session-credentials
+else
+  echo "Note: /tmp/.git-session-credentials not writable (stale nobody:nogroup file)."
+  echo "Unsetting credential.helper and using PAT-in-URL for pushes instead."
+  git config --unset credential.helper 2>/dev/null || true
+  git remote set-url origin "https://x-access-token:${GITHUB_PAT}@github.com/vatsal2471/lineal-skills.git"
+  # IMPORTANT: before committing the final "done" push, re-check the remote URL
+  # doesn't leak the PAT into the log. The preferred workflow is to leave origin
+  # as the clean https URL and pass the PAT-URL to `git push` directly:
+  #   git push "https://x-access-token:${GITHUB_PAT}@github.com/vatsal2471/lineal-skills.git" main
+fi
 ```
+
+**The "unable to write credential store" warning on push is NON-FATAL.** If you see it, the push still went through — look at the `To https://github.com/...` line below it and check for `<oldsha>..<newsha>  main -> main`. This warning happens whenever `credential.helper=store` is configured but the target file is not writable by us. The Phase 0 block above tries to avoid setting that helper in the first place, but if you inherit a repo from a previous session that already has it configured, you will see the warning. Do not panic and do not ask the user for a new PAT — verify the push result by running `git log origin/main -1` after fetching.
 
 The repo structure is:
 ```
