@@ -4,6 +4,40 @@ Update this file after every 1065 return. This is how the skill gets smarter ove
 
 ---
 
+### 2026-04-11 — SKILL BUG FIX: Phase 0 SESSION_ROOT auto-detection picked the wrong user's session
+
+**Context:** After completing Patel, the final `git push` failed even though the PAT was sitting in the persistent mcpb-cache store exactly where the skill expects it. The user asked "why does this keep happening?" — which forced an actual root-cause investigation instead of another PAT-reprompt.
+
+**Root cause:** The Phase 0 block in SKILL.md had:
+```bash
+SESSION_ROOT=$(ls -d /sessions/*/ 2>/dev/null | head -1 | sed 's|/$||')
+```
+On a shared sandbox machine, `/sessions/` contains ALL active session directories for every user — not just the current session. On this machine there were 11:
+```
+affectionate-zen-mccarthy, beautiful-fervent-tesla, beautiful-vibrant-cray,
+focused-sweet-pascal, lost+found, modest-friendly-volta, pensive-blissful-fermat,
+practical-epic-einstein, vigilant-festive-gates, wizardly-zen-euler, zen-funny-pasteur
+```
+`ls` returns them alphabetically, and `head -1` picks `affectionate-zen-mccarthy` — someone else's session. Every read of `$PERSIST_PAT` and `$SKILLS_ROOT_PAT` then hit Permission denied because my uid 1010 doesn't own that directory. The skill silently fell through all three checks and prompted the user for a new PAT.
+
+**The actual PAT was fine.** It had been sitting at `/sessions/beautiful-fervent-tesla/mnt/.remote-plugins/plugin_.../.mcpb-cache/.github-pat`, 93 bytes, readable by me, owner uid 1010, mtime April 10 18:38 — exactly where the skill's persistence design says it should be. The detection logic just couldn't find it.
+
+**Fix:** Replace `ls /sessions/*/ | head -1` with `$HOME`. Every sandbox session has `$HOME` set to its own session directory, owned by the current uid, guaranteed to be THIS session. Added a secondary fallback `find /sessions -uid $(id -u) | head -1` for environments where $HOME isn't /sessions/*.
+
+**Secondary issue (pre-existing):** the `/tmp/.git-session-credentials` file is owned by `nobody:nogroup` (uid 65534) from a very old session that ran under a different namespace mapping. Current sessions (uid 1010) can neither read, write, nor delete it. The Phase 0 block ALREADY handles this — it tests `-r` and falls through, and the push section tests writability before setting credential.helper — but the combination of (wrong SESSION_ROOT → no persistent PAT found) + (stuck /tmp file → no session-local helper) + (context-compacted session → Phase 0 never ran at all this session) produced a total dead-end.
+
+**Time lost:** ~10 minutes of user frustration ("why does this keep happening?") before I actually read SKILL.md and traced the logic line-by-line. Should have been the first thing I did when the push failed.
+
+**Lesson for the skill (and for me):** when Phase 0 credential lookup fails, DO NOT prompt the user. DO NOT use `AskUserQuestion`. Instead, print the detected `SESSION_ROOT`, list `/sessions/*/`, compare against `$HOME`, and find the mismatch. The PAT is almost certainly already in the persistent store — the logic just isn't finding it.
+
+**Checklist for future sessions continued from compacted context:**
+1. If you need to push, FIRST run a single diagnostic: `echo "HOME=$HOME"; ls -la "$HOME/mnt/.remote-plugins/plugin_01GC5sHmfRpUwySPemYHW7n5/.mcpb-cache/.github-pat"`
+2. If that file exists and is readable, you have the PAT. Do NOT ask the user.
+3. If it's missing, check if it's in the other persistent location: `ls -la "$HOME/mnt/.claude/skills/.github-pat"`
+4. Only prompt the user if BOTH are empty or unreadable.
+
+---
+
 ### 2026-04-11 — PATEL, KRUTEN & MONICA (MFJ) — 1040 Individual, TX resident + CA 540NR
 **Time:** ~90 minutes (continued across 2 sessions — context window reset after calculate)
 **Target:** 15 minutes

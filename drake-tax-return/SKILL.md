@@ -73,11 +73,24 @@ This skill uses **one reference file per return type**. Only load what you need:
 # Do NOT reintroduce mnt/.claude/session-env/ or any path containing local_<UUID>
 # and call it persistent — those are all wiped between sessions.
 
-# CRITICAL: Derive the session directory at runtime — NEVER hardcode a session UUID.
-# Every session gets a fresh /sessions/<adjective-adjective-name>/ mount, and if you
-# hardcode a previous session's name, the whole PAT lookup fails with ENOENT and
-# falls through to prompting the user (which has burned this workflow many times).
-SESSION_ROOT=$(ls -d /sessions/*/ 2>/dev/null | head -1 | sed 's|/$||')
+# CRITICAL: Derive the session directory at runtime — NEVER hardcode a session name,
+# and NEVER pick from `ls /sessions/*/`. The /sessions mount contains directories for
+# EVERY user's sessions on this machine (often 10+), and `ls /sessions/*/ | head -1`
+# picks the alphabetically-first one — which is almost never the current session's
+# and returns permission-denied on every PAT read. This burned the workflow on
+# Patel 2025 (2026-04-11): `affectionate-zen-mccarthy` sorted before my real
+# session `beautiful-fervent-tesla`, Phase 0 never found the PAT, skill push
+# silently dead-ended.
+#
+# The correct source is $HOME. Every sandbox session has $HOME set to its own
+# session directory (e.g. /sessions/beautiful-fervent-tesla), writable by the
+# current uid, and guaranteed to be THIS session and not someone else's.
+SESSION_ROOT="$HOME"
+# Sanity check: if $HOME isn't a /sessions/* path for some reason, fall back to
+# finding the one owned by our current uid (not just the alphabetically first).
+if [[ "$SESSION_ROOT" != /sessions/* ]]; then
+  SESSION_ROOT=$(find /sessions -mindepth 1 -maxdepth 1 -type d -uid "$(id -u)" 2>/dev/null | head -1)
+fi
 PERSIST_DIR="$SESSION_ROOT/mnt/.remote-plugins/plugin_01GC5sHmfRpUwySPemYHW7n5/.mcpb-cache"
 PERSIST_PAT="$PERSIST_DIR/.github-pat"
 SKILLS_ROOT_PAT="$SESSION_ROOT/mnt/.claude/skills/.github-pat"
@@ -110,8 +123,10 @@ fi
 
 REMOTE_URL="https://x-access-token:${GITHUB_PAT}@github.com/vatsal2471/lineal-skills.git"
 
-# Clone or pull the latest skill from GitHub
-SESSION_DIR="/sessions/$(ls /sessions | head -1)"
+# Clone or pull the latest skill from GitHub.
+# Use $SESSION_ROOT (derived from $HOME above) — NOT `ls /sessions | head -1`, which
+# returns some OTHER user's session directory on a shared machine.
+SESSION_DIR="$SESSION_ROOT"
 cd "$SESSION_DIR"
 if [ -d github-repo ]; then
   cd github-repo && git remote set-url origin "$REMOTE_URL" && git pull && git remote set-url origin "https://github.com/vatsal2471/lineal-skills.git"
