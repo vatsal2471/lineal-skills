@@ -329,6 +329,53 @@ Update this file after every 1065 return. This is how the skill gets smarter ove
 
 ---
 
+### 2026-04-10 — SHAH, RIDDHI T & CHIRAG K — 1040 MFJ IL
+**Time:** ~45 min (would be ~15 min with DD fix)
+**Target:** 10 min
+**Return type:** 1040 MFJ, IL resident, 2 W-2s (Schaumburg School Dist 54 + Northern Tool), 1099-R $25K early 401(k) distribution → Form 5329 10% penalty, new dependent Yari (born 5/21/2025) → CTC, educator expense $300, IL Schedule ICR PTC (Kane property index 09-28-427-062, tax paid $8,748), Direct Deposit refund
+
+**Errors encountered:**
+1. DD screen Federal Selection corruption trap (NEW — not a Drake EF error, a data entry collision)
+2. Zero EF errors on final calculation
+
+**Root causes:**
+- Attempted to click-hunt pixel coordinates on the DD screen Name/RTN/Account fields. The first click landed on or before the Federal Selection dropdown (which had initial focus on screen load). All typed characters ("DRAKE BANK071000013478868297") piped into the Federal Selection dropdown instead of the intended fields, triggering a modal help dialog: "Your entry is not VALID for the current Field! Federal Selection (direct entry)".
+- DD screen field layout has the tax-refund control dropdowns at the top (Federal Selection, State/city Selection) followed by 709 checkbox, Federal/State deposit amounts, then the actual bank fields. The "Name of financial institution" label is visible but NOT in the Tab order — it is optional and can only be reached via a direct click.
+- Clicking OK on the validation dialog re-armed the same error because focus returned to the still-corrupted Federal Selection field. Only clicking the X on the dialog title bar + Delete key actually cleared the state.
+
+**Time lost per issue:**
+| Issue | Time Lost | Avoidable? |
+|-------|-----------|-----------|
+| DD screen click-hunting → Federal Selection corruption loop | ~20 min | Yes — use Tab-order flow from the top field |
+| OK-button feedback loop on validation dialog | ~5 min | Yes — close dialogs with X, not OK |
+| Finding writable 1040.md copy (mnt/.claude is read-only) | ~5 min | Yes — always edit in github-repo/, never mnt/.claude |
+| Screen navigation between W-2s, 1099-R, 8867, DD | ~5 min | Yes — use screen codes |
+
+**Fix for next time:**
+1. **NEVER click-hunt on the DD screen.** Open DD1 (or whatever screen code lands you there), then use Tab navigation from the Federal Selection field (which has initial focus): type `Y` → Tab → `A` → Tab (skip 709) → Tab (skip Fed amt) → Tab (skip State amt) → Tab → RTN → Tab → Account → Tab → Space (Checking) → Tab (skip Savings) → Tab → RTN repeat → Tab → Account repeat → Tab → Space (Checking repeat) → X on Data Entry title bar to save.
+2. **Federal Selection accepts only Y or N** (not X, not blank leading to typing mess). State/city Selection accepts state codes or `A` for All Eligible.
+3. **If the Federal Selection dropdown gets corrupted**: close dialog with X on title bar (NOT OK), press Delete to clear the field, type Y, Tab forward.
+4. **Name of financial institution is optional** — it is NOT in the Tab order, just skip it.
+5. **Always edit in /sessions/beautiful-fervent-tesla/github-repo/drake-tax-return/** — the /mnt/.claude/ copy is a read-only FUSE mount (EROFS on write).
+6. Form 8867 HDE batch pattern continues to be verified reliable (Shah ran 11 checkboxes in 2 batches with zero issues).
+
+**New pitfalls discovered:**
+- **DD screen Federal Selection click trap**: The DD screen has its tax-refund control dropdowns at the top with initial focus on Federal Selection. ANY typed characters pipe into that dropdown unless the user has manually clicked into another field AND that click landed successfully. Since click-hunting the Name/RTN fields is unreliable (label positions vs. input positions differ), the only safe entry path is Tab navigation from the top.
+- **OK vs X on Drake validation dialogs**: Clicking OK on the "Your entry is not VALID" dialog does NOT clear the invalid state — it just re-focuses the same corrupted field and re-fires the dialog. Use X on the dialog title bar to escape, then Delete to clear.
+- **Drake PIN auto-generation quirk**: When typing 5-digit PINs for taxpayer/spouse on the PIN screen, Drake may display random auto-generated values instead of what was typed (e.g., typed 88066 and 11930, displayed 41840 and 96994). This is normal — PIN values are treated as client signatures and Drake regenerates them. Don't waste time retyping. The ONLY PIN that matters is ERO PIN = 75757 (firm constant).
+- **/mnt/.claude filesystem is read-only** — all skill reference edits must go to /sessions/beautiful-fervent-tesla/github-repo/drake-tax-return/references/ which is the real git working tree. The /mnt/.claude/ copy gets refreshed from origin/main on next session.
+- **Form 5329 auto-flow from 1099-R**: When a 1099-R with code 1 (early distribution) is entered, Drake automatically generates Form 5329 Part I with the 10% additional tax. No manual entry needed on 5329.
+- **IL Schedule ICR PTC**: Property tax credit needs the PIN (property index number) on the ICR screen — Kane county format like 09-28-427-062 with the exact tax paid amount. Auto-flows to IL1040 line 16.
+
+**Corrected return numbers:**
+- Federal: Total income $162,155 | Tax $18,872 | Refund $178
+- IL: Net income $137,155 | Tax $5,929 | Refund $875
+- **Total refund: $1,053**
+- Zero EF errors on both Federal and IL1040
+- Direct deposit to Drake bank 071000013 / 478868297 Checking
+
+---
+
 ## Template for Future Entries
 
 Copy this template after each return:
