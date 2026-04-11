@@ -4,6 +4,50 @@ Update this file after every 1065 return. This is how the skill gets smarter ove
 
 ---
 
+### 2026-04-11 — THOMPSON, DONNA P (Single, age 89) — 1040 Individual, IL resident
+
+**Time:** ~90 minutes (continued across 2 sessions; context window compacted once mid-return)
+**Target:** 15 minutes
+**Return type:** 1040 Single IL resident, retiree (DOB 1936). Income: 3× 1099-INT (Ally ×2, Greenstate CU) totaling $5,444; 1× 1099-R Charles Schwab IRA normal distribution code 7 ($34,000); D2 capital loss carryovers (ST $67,748 reg / $40,748 AMT, LT $46,444 reg/AMT) → $3,000 line 7 allowed; ES 4× $930 = $3,720 estimated payments. Standard deduction ($15,750 base + $2,000 age 65+ + $6,000 OBBB senior deduction = $23,750). IL retirement-income subtraction $34,000 → IL AGI $2,444, IL tax $0. No SS (user skipped), no K-1s (user: "coming separately"), no Schedule E.
+
+**Final numbers (clean, both GREEN):**
+- Federal: Total Income $36,444 / Taxable $12,694 / Total Tax $1,283 / Refund $2,437 (Paper Check)
+- IL 1040: AGI $2,444 / Taxable $0 / Total Tax $0 / Refund $0
+- EF Status: Clean — Federal + IL1040 green checkmarks, Eligible for E.F.
+
+**Errors encountered:**
+1. **EF Federal 500 MISSING ID INFORMATION** — IDS screen needed field 24 checkbox. Fix: checked "Taxpayer did not provide" checkbox. **Lost ~5 min direct-clicking instead of using HDE.** Correct method: HDE `type "24" → Tab → x` (verified by user — three keystrokes). Already documented in Rule 1 but I regressed to direct-click on a "simple" single-checkbox screen.
+2. **EF Federal 5350 MISSING SIGNATURE** — PIN screen needed ERO PIN (field 2) + date + taxpayer PIN. Fix applied correctly from first try this return: direct-click field 2 per Rule 16 (masked field), HDE for the rest. No regression on this one.
+3. **EF Federal 1117 DIRECT DEPOSIT INFORMATION** — NEW error this year (IRS Executive Order 14247). Requires either direct deposit info on DD screen OR the "Receive a paper check" checkbox (DD field 61) to produce a "Taxpayer Direct Deposit Statement" documenting the paper-check election. Without this, refund is delayed 6 weeks + taxpayer gets IRS Notice CP53E. Fix: HDE on DD screen, `type "61" → Tab → x → Return`. Cleared on next Calculate. **Document this as a standing step for all refund returns where client does not provide direct deposit banking info.**
+4. **1099-R first attempt corrupted by batched type "941737782"** (no dash) — Drake TIN lookup fired mid-batch and auto-populated payer info fields, which interfered with subsequent field entries and sent HDE to Form 5471 Schedule I-1. Fix: exited, re-entered with dashed TIN `94-1737782` and skipped fields 6-11 (let auto-populate handle name/address). **Lesson: type dashed TINs on 1099-R so the auto-populate triggers on a clean value, and skip the payer name/address fields after TIN entry — Drake fills them from the built-in payer database.**
+5. **HDE checkbox direct-click regression on IDS** — I fell back to direct-click at (367, 558), missed twice, re-zoomed to verify, and mis-clicked the Exit dropdown. Total ~5 min for one checkbox that should have been ~10s via HDE. Root cause: I assumed HDE was "overkill" for a single checkbox. **It is not. HDE is always faster and more reliable than a pixel click, even for 1 field.**
+
+**Root causes:**
+- **Rule 1 regression on "simple" screens.** Single-checkbox screens (IDS "did not provide", DD "Receive a paper check") SEEM too trivial to bother with HDE, but direct-clicking them consistently costs 5+ minutes due to misses and Exit-button pixel hunts. HDE the checkbox. Always. `field# → Tab → x → Return`.
+- **IRS EO 14247 paper-check election is now a standing requirement.** Every 1040 without direct deposit now needs DD field 61 checked. Added as a Phase 2 checklist item in 1040.md.
+- **TIN auto-populate on 1099-R is a double-edged tool.** It saves typing the payer name/address/city/state/zip, but it fires on field-exit from the TIN field and can clobber subsequent HDE operations if the batch tries to enter payer fields after the TIN. Type TIN with dashes (slower mid-field, gives Drake time to finish the lookup) and skip fields 6-11 in the HDE batch.
+
+**Time lost per issue:**
+| Issue | Time Lost | Avoidable next time? |
+|-------|-----------|----------------------|
+| IDS direct-click regression (Rule 1 violation) | ~5 min | **YES** — always HDE checkboxes, even single ones |
+| 1099-R batched TIN entry corrupted by auto-populate | ~8 min | **YES** — type dashed TIN + skip fields 6-11 in batch |
+| 1117 direct deposit error discovery + fix | ~3 min | Partial — now documented as standing step |
+| Context window compaction mid-return | ~20 min | Partial — shorter returns should finish in one session |
+| PMT vs PIN row mis-click (y=484 vs y=498) | ~2 min | Yes — use search bar "PIN" not sidebar clicks |
+| Exit button pixel hunt (y=67/73/83) | ~2 min | Yes — exit is at (963,73); anchor once |
+
+**Screens captured / extended in 1040.md atlas:**
+- IDS (Required Identification) — atlas fields 1-26 verified
+- DD (Direct Deposit) — field 61 = "Receive a paper check" checkbox confirmed, added to atlas
+- PIN — atlas already existed; Rule 16 re-confirmed (field 2 ERO PIN requires direct click even when HDE is active everywhere else)
+
+**Rules added/updated:**
+- **Rule 1 expanded** with Tab→x checkbox toggle (user-verified simpler form) + explicit warning not to direct-click even "simple" single-checkbox screens
+- **New standing step**: after every refund 1040, check DD field 61 "Receive a paper check" if no bank info entered (EO 14247 / EF 1117)
+
+---
+
 ### 2026-04-11 — HAMMOUD, ROCHANA & PATTERSON, RYAN AUSTIN (MFJ) — 1040 Individual, IL resident
 
 **Time:** ~120 minutes (continued across 2 sessions; context window compacted once mid-return)
