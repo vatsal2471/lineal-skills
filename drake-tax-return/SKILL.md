@@ -260,26 +260,58 @@ Follow the screen order in the return-type reference file. The general principle
    - New pitfalls or tricks discovered
 3. **Update the reference file** — if a new EF error, new screen behavior, new field, or faster navigation path was discovered, add it to `references/[type].md`
 4. **Create new reference file** — if this was a new return type, create `references/[type].md` from scratch using the template at the bottom of this file
-5. **Commit and push to GitHub** — this is how the skill gets version-controlled:
+5. **Commit and push to GitHub** — this is how the skill gets version-controlled.
+
+   **USE THIS EXACT BLOCK. Do not rewrite it. Do not "simplify" it. Copy-paste as-is.** It is self-contained: it loads the PAT inline from the persistent store, so it works even if Phase 0 was skipped (e.g., post-compaction resume, mid-session recovery, continuing a return from a prior session). This block is the single source of truth for "push to lineal-skills" — every other push path in this skill should route through here.
+
    ```bash
-   # Use $HOME — NEVER `basename $PWD` or `ls /sessions | head -1`. Those both break
-   # on a shared sandbox where /sessions has multiple users. See Phase 0 for why.
+   set -e
    cd "$HOME/github-repo"
-   # Copy updated files from the working skill directory back to repo
-   cp -r /path/to/drake-tax-return-edit/* drake-tax-return/
+
+   # --- Inline PAT load (self-contained — does NOT depend on Phase 0 env state) ---
+   # Each Bash tool call runs in a fresh shell. Any $GITHUB_PAT from an earlier call
+   # is GONE. Do not assume it's loaded. Always re-read from the persistent store here.
+   PERSIST_PAT="$HOME/mnt/.remote-plugins/plugin_01GC5sHmfRpUwySPemYHW7n5/.mcpb-cache/.github-pat"
+   SKILLS_ROOT_PAT="$HOME/mnt/.claude/skills/.github-pat"
+   if [ -r "$PERSIST_PAT" ] && [ -s "$PERSIST_PAT" ]; then
+     GITHUB_PAT=$(tr -d '\r\n ' < "$PERSIST_PAT")
+   elif [ -r "$SKILLS_ROOT_PAT" ] && [ -s "$SKILLS_ROOT_PAT" ]; then
+     GITHUB_PAT=$(tr -d '\r\n ' < "$SKILLS_ROOT_PAT")
+     # Mirror into mcpb-cache for next session
+     mkdir -p "$(dirname "$PERSIST_PAT")" 2>/dev/null
+     printf '%s' "$GITHUB_PAT" > "$PERSIST_PAT" && chmod 600 "$PERSIST_PAT"
+   else
+     echo "ERROR: no PAT in persistent store. Ask user for PAT, then write it with:"
+     echo "  printf '%s' \"\$GITHUB_PAT\" > \"$PERSIST_PAT\" && chmod 600 \"$PERSIST_PAT\""
+     exit 1
+   fi
+   # -------------------------------------------------------------------------------
+
+   # Stage + commit (change files list as appropriate)
    git add drake-tax-return/
    git commit -m "Return: [Client] [Type] — [summary of learnings]"
-   git push origin main
+
+   # Push using PAT-in-URL directly. This intentionally does NOT rely on
+   # credential.helper or the remote URL in .git/config — both of those have
+   # burned us when /tmp/.git-session-credentials is stale-owned by nobody:nogroup.
+   git push "https://x-access-token:${GITHUB_PAT}@github.com/vatsal2471/lineal-skills.git" main
+
+   # Verify the push actually landed on origin (cheap sanity check)
+   git fetch origin main 2>&1
+   git log origin/main -1 --oneline
    ```
+
    The commit message should summarize what was learned (e.g., "Sood 1040: 8867 Heads Down Entry, K-1 QBI MFC fix, Q7a trap").
 
-   **BEFORE asking the user for a new PAT, ALWAYS run this diagnostic first:**
+   **Why the inline PAT load (added 2026-04-11 after Hammoud):** Phase 0's PAT load sets `$GITHUB_PAT` in the shell that ran Phase 0 — which is a DIFFERENT shell than the one running Phase 4, because every `Bash` tool call spawns a fresh shell. If I skip Phase 0 (which happens on post-compaction resume, when the summary tells me to "continue where you left off" and I jump straight to the remaining work), Phase 4's push fails with "could not read Username for 'https://github.com'" even though the PAT is sitting in the persistent cache the whole time. Embedding the load inline makes Phase 4 work regardless of whether Phase 0 ran. This is a repeat offender — it burned Patel AND Hammoud. The block above MUST be used verbatim; do not optimize it away on the grounds that "Phase 0 already did this."
+
+   **Diagnostic if the inline load itself fails:**
    ```bash
    echo "HOME=$HOME"
    ls -la "$HOME/mnt/.remote-plugins/plugin_01GC5sHmfRpUwySPemYHW7n5/.mcpb-cache/.github-pat" 2>&1
    ls -la "$HOME/mnt/.claude/skills/.github-pat" 2>&1
    ```
-   If either file exists, is non-empty, and is readable by the current uid, **the PAT is already there** — just read it with `cat` and use it. Do NOT prompt the user. The Patel 2026-04-11 failure happened because Phase 0 was looking at the wrong session's directory and concluded the PAT was missing when it wasn't.
+   If either file exists, is non-empty, and is readable by the current uid, **the PAT is already there** — the inline load must have a bug. Debug the bug. Do NOT prompt the user. The Patel 2026-04-11 failure happened because Phase 0 was looking at the wrong session's directory (`ls /sessions | head -1` instead of `$HOME`) and concluded the PAT was missing when it wasn't.
 
    **If git push ACTUALLY fails with auth error** (i.e. the persistent PAT was loaded and GitHub rejected it — token expired or revoked): ask the user for a fresh fine-grained PAT for `vatsal2471/lineal-skills` (Contents: Read and write), then write it to the persistent store:
    ```bash
