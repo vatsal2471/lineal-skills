@@ -229,15 +229,23 @@ Follow the screen order in the return-type reference file. The general principle
 
 **After EVERY return, before moving on, do all of these:**
 
-1. **Document what happened** — update `references/retro-log.md` with:
+1. **Time + shortcut audit (MANDATORY — do this FIRST, before writing the retro-log)** — the skill only gets faster if every return ends with an honest click-by-click review. Do not skip this even if the return went well. Do not wait to be asked.
+   - Scroll back through the session's tool calls for this return. Count: total elapsed time, # of screenshots, # of `left_click` calls, # of `computer_batch` calls, # of times HDE was used vs. mouse/tab data entry.
+   - For EVERY `left_click` on a toolbar button, tab header, menu item, or Exit button, ask: **"could this have been a keyboard shortcut or a screen-code search?"** Every click that should have been a keystroke is a time-leak finding.
+   - For every data-entry screen, ask: **"did I enter HDE (Ctrl+N) immediately, stay in HDE the whole screen, and exit with Esc/Ctrl+N?"** Any screen where HDE was dropped mid-entry is a discipline finding.
+   - For every screen, count tool calls. The target is **3 tool calls per screen** (screenshot → computer_batch with all HDE actions → verification screenshot). Any screen that exceeded 3 calls is a screenshot-discipline finding.
+   - Record findings as a bulleted "Shortcut audit" subsection inside this return's retro-log entry. Format: `[click description] → [shortcut that should have been used] → [est. seconds lost]`. Sum the lost seconds at the bottom.
+   - If a shortcut was discovered or confirmed during the return, promote it from the "TO VERIFY" column to the "VERIFIED" column of the Drake keyboard shortcut table in `references/[type].md`.
+   - If the same time-leak shows up in 2+ consecutive returns, it becomes a rule in `references/[type].md` (not just a retro-log note) so the next return is forced to fix it.
+2. **Document what happened** — update `references/retro-log.md` with:
    - Client name, EIN, return type, date
-   - Actual time spent vs target
+   - Actual time spent vs target, plus the audit findings from step 1
    - Every error encountered with root cause and time lost
    - Every navigation issue that slowed entry
    - New pitfalls or tricks discovered
-2. **Update the reference file** — if a new EF error, new screen behavior, new field, or faster navigation path was discovered, add it to `references/[type].md`
-3. **Create new reference file** — if this was a new return type, create `references/[type].md` from scratch using the template at the bottom of this file
-4. **Commit and push to GitHub** — this is how the skill gets version-controlled:
+3. **Update the reference file** — if a new EF error, new screen behavior, new field, or faster navigation path was discovered, add it to `references/[type].md`
+4. **Create new reference file** — if this was a new return type, create `references/[type].md` from scratch using the template at the bottom of this file
+5. **Commit and push to GitHub** — this is how the skill gets version-controlled:
    ```bash
    # Use $HOME — NEVER `basename $PWD` or `ls /sessions | head -1`. Those both break
    # on a shared sandbox where /sessions has multiple users. See Phase 0 for why.
@@ -277,7 +285,7 @@ Follow the screen order in the return-type reference file. The general principle
    ```
    The mcpb-cache write means next session picks it up automatically — Phase 0 reads from `$HOME/mnt/.remote-plugins/.../.mcpb-cache/.github-pat` on startup. Do NOT suggest Claude Code env vars or `mnt/.claude/session-env/` — both are broken paths that burned the user multiple times.
 
-5. **Package and present** the updated `.skill` file so the user can reinstall with new learnings:
+6. **Package and present** the updated `.skill` file so the user can reinstall with new learnings:
    ```bash
    cd /path/to/skill-creator && python -m scripts.package_skill /path/to/drake-tax-return /path/to/outputs/
    ```

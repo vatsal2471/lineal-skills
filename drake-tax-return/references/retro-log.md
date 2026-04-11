@@ -90,6 +90,33 @@ practical-epic-einstein, vigilant-festive-gates, wizardly-zen-euler, zen-funny-p
 - **CA errors are hidden in CAMSG** — the calc dialog shows "CA540NR Eligible For E.F." green check even when CA has EF errors, because those errors live in the CAMSG View/Print page, not the main EF message list. This is a dangerous false-positive trap. Always verify by opening View/Print and scanning for red CAMSG/MESSAGES nodes in the form tree.
 - **Exit button dropdown arrow is at x=987-990, icon at x=985.** Click x=985 to avoid the dropdown.
 
+**Shortcut audit (Patel 2026-04-11):** this return should have taken ~15 minutes. It took ~90. Roughly half of the slippage was error discovery (legitimate learning, now documented in rules above). The other half was pure click-overhead — time spent mousing around Drake's UI when a keystroke would have worked. Findings:
+
+| Action | What I did | What I should have done | Est. seconds lost |
+|--------|------------|-------------------------|-------------------|
+| Exit NR screen after entering line 7 | `left_click` on Exit button at (985, 122) | `Esc` key (single keystroke) | ~5s × 1 = 5s |
+| Navigate to HCM screen | Clicked "Health Care" tab, then clicked HCM link inside it | Screen code search: type `HCM` in the Data Entry selector box | ~15s × 1 = 15s |
+| Close HDE popup that appeared over HCM | Clicked the X on the popup | `Escape` | ~5s × 1 = 5s |
+| Exit HCM screen | `left_click` on Exit | `Esc` | ~5s × 1 = 5s |
+| Calculate the return | Clicked Calculate button on return-level toolbar | `Ctrl+C` (VERIFIED) | ~8s × 3 calculate cycles = 24s |
+| Open View/Print to check CAMSG | Clicked View/Print button on toolbar | `Ctrl+V` or `F10` (TO VERIFY) | ~8s × 2 cycles = 16s |
+| Exit View/Print | Clicked Exit | `Esc` | ~5s × 2 = 10s |
+| Screenshot between every HDE field | ~2 screenshots per field on PIN screen trying to debug the non-persistence | 1 screenshot before, 1 computer_batch with whole HDE sequence, 1 screenshot after | ~30s × multiple screens = 120s+ |
+| Navigate from one data entry screen to next | Clicked Exit, then searched from Data Entry menu | `Esc` (exit current screen), then type screen code directly in selector | ~10s × 8 screens = 80s |
+
+**Total click-overhead time leak: ~5 minutes of pure UI navigation**, plus ~2 minutes of extra screenshots. That's ~7 minutes that a disciplined keyboard-only pass would have saved. Every one of those clicks is a habit I need to break on the next return.
+
+**Discipline findings:**
+- HDE was dropped on the PIN screen (Ctrl+N popup was closed and re-opened multiple times while debugging the field 2 non-persistence). Should have exited HDE cleanly with Ctrl+N and done the direct click from outside HDE mode, not fought the popup.
+- Screenshot count per screen was way over 3 — PIN screen had 6+ screenshots, DD screen had 5+. Target: 3 per screen (entry screenshot → computer_batch with all HDE actions → verification screenshot).
+- computer_batch usage: good on NR and HCM screens (single batch for the whole checkbox sequence), terrible on PIN and DD (one HDE action per tool call instead of batching all 4-5 fields).
+
+**New verified shortcuts to promote on next return:** after next return confirms them, move to the VERIFIED column of Rule 21 in 1040.md:
+- `Esc` to exit a data entry screen back to the Data Entry menu
+- `Ctrl+C` to Calculate
+- `Ctrl+V` or `F10` to open View/Print
+- Screen code search: typing a screen code (e.g. `HCM`, `PIN`, `DD`, `NR`) directly into the Data Entry selector jumps straight to that screen without clicking tabs
+
 ---
 
 ### 2026-04-10 — NIELSEN, BLAKE & BOONE, OLIVIA (MFJ) — 1040 Individual
