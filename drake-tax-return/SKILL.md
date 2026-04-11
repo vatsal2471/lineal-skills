@@ -239,7 +239,9 @@ Follow the screen order in the return-type reference file. The general principle
 3. **Create new reference file** — if this was a new return type, create `references/[type].md` from scratch using the template at the bottom of this file
 4. **Commit and push to GitHub** — this is how the skill gets version-controlled:
    ```bash
-   cd /sessions/$(basename $PWD)/github-repo
+   # Use $HOME — NEVER `basename $PWD` or `ls /sessions | head -1`. Those both break
+   # on a shared sandbox where /sessions has multiple users. See Phase 0 for why.
+   cd "$HOME/github-repo"
    # Copy updated files from the working skill directory back to repo
    cp -r /path/to/drake-tax-return-edit/* drake-tax-return/
    git add drake-tax-return/
@@ -247,20 +249,33 @@ Follow the screen order in the return-type reference file. The general principle
    git push origin main
    ```
    The commit message should summarize what was learned (e.g., "Sood 1040: 8867 Heads Down Entry, K-1 QBI MFC fix, Q7a trap").
-   
-   **If git push fails with auth error:** The persistent PAT at `mcpb-cache/.github-pat` is probably missing, expired, or revoked. Ask the user for a fresh fine-grained PAT for `vatsal2471/lineal-skills` (Contents: Read and write), then write it to the persistent store AND the session helper:
+
+   **BEFORE asking the user for a new PAT, ALWAYS run this diagnostic first:**
+   ```bash
+   echo "HOME=$HOME"
+   ls -la "$HOME/mnt/.remote-plugins/plugin_01GC5sHmfRpUwySPemYHW7n5/.mcpb-cache/.github-pat" 2>&1
+   ls -la "$HOME/mnt/.claude/skills/.github-pat" 2>&1
+   ```
+   If either file exists, is non-empty, and is readable by the current uid, **the PAT is already there** — just read it with `cat` and use it. Do NOT prompt the user. The Patel 2026-04-11 failure happened because Phase 0 was looking at the wrong session's directory and concluded the PAT was missing when it wasn't.
+
+   **If git push ACTUALLY fails with auth error** (i.e. the persistent PAT was loaded and GitHub rejected it — token expired or revoked): ask the user for a fresh fine-grained PAT for `vatsal2471/lineal-skills` (Contents: Read and write), then write it to the persistent store:
    ```bash
    GITHUB_PAT='<paste from user>'
-   PERSIST_PAT="/sessions/$(ls /sessions | head -1)/mnt/.remote-plugins/plugin_01GC5sHmfRpUwySPemYHW7n5/.mcpb-cache/.github-pat"
+   # Use $HOME — NEVER `ls /sessions | head -1`. On a shared sandbox, /sessions
+   # contains 10+ other users' session dirs and ls|head-1 picks the wrong one.
+   PERSIST_PAT="$HOME/mnt/.remote-plugins/plugin_01GC5sHmfRpUwySPemYHW7n5/.mcpb-cache/.github-pat"
+   mkdir -p "$(dirname "$PERSIST_PAT")" 2>/dev/null
    printf '%s' "$GITHUB_PAT" > "$PERSIST_PAT" && chmod 600 "$PERSIST_PAT"
-   printf 'https://x-access-token:%s@github.com\n' "$GITHUB_PAT" > /tmp/.git-session-credentials
-   chmod 600 /tmp/.git-session-credentials
-   git config credential.helper 'store --file=/tmp/.git-session-credentials'
-   git remote set-url origin "https://x-access-token:${GITHUB_PAT}@github.com/vatsal2471/lineal-skills.git"
-   git push origin main
-   git remote set-url origin "https://github.com/vatsal2471/lineal-skills.git"
+   # Only write /tmp/.git-session-credentials if we actually own it or can create it
+   if [ -w /tmp/.git-session-credentials ] || ( : > /tmp/.git-session-credentials 2>/dev/null ); then
+     printf 'https://x-access-token:%s@github.com\n' "$GITHUB_PAT" > /tmp/.git-session-credentials
+     chmod 600 /tmp/.git-session-credentials
+     git config credential.helper 'store --file=/tmp/.git-session-credentials'
+   fi
+   # Push using PAT-in-URL directly (leaves origin clean in config)
+   git push "https://x-access-token:${GITHUB_PAT}@github.com/vatsal2471/lineal-skills.git" main
    ```
-   The mcpb-cache write means next session picks it up automatically. Do NOT suggest Claude Code env vars or `mnt/.claude/session-env/` — both are broken paths that burned the user multiple times.
+   The mcpb-cache write means next session picks it up automatically — Phase 0 reads from `$HOME/mnt/.remote-plugins/.../.mcpb-cache/.github-pat` on startup. Do NOT suggest Claude Code env vars or `mnt/.claude/session-env/` — both are broken paths that burned the user multiple times.
 
 5. **Package and present** the updated `.skill` file so the user can reinstall with new learnings:
    ```bash
