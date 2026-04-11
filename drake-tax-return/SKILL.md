@@ -224,12 +224,29 @@ The Phase 0 block above checks four sources in order: (1) persistent mcpb-cache 
 
 ### Phase 2: Data Entry (in Drake)
 
+**Drake field color legend — READ THIS BEFORE YOU TOUCH THE KEYBOARD (REPEAT OFFENDER, flagged again 2026-04-11):**
+
+| Color | Meaning |
+|-------|---------|
+| **BLUE** (background) | **Required for e-file.** Must be filled on first pass. Missing blue = EF error. |
+| **YELLOW** (background) | **The field currently has focus (cursor indicator).** Has ZERO correlation with required status. |
+| Gray / masked dots | Privacy masking on SSN/EIN fields, OR a blank required field. Verify with HDE before assuming populated. |
+| Red outline | Validation error after calc. |
+
+**The trap that keeps catching me:** when you land on a blue required field, it **turns yellow** because focus lands on it, so the screenshot shows yellow and I pattern-match "yellow = important/required." That's wrong — the yellow is the cursor highlight, and it moves with wherever I clicked last. If I want to know whether a field is actually required, I must: (a) check the atlas in `references/[type].md`, or (b) calculate and read the EF errors, or (c) look at the field's **unfocused** color (which requires clicking away from it first). **Never** conclude a field is required from a screenshot where it's yellow — that's the focus color.
+
+Rule-of-thumb: if writing notes that say "field X is yellow," STOP. Yellow is not a persistent property of the field. Write the label instead — "BLUE required" or just "required."
+
+---
+
 Follow the screen order in the return-type reference file. The general principles:
 
 1. Enter screens in the prescribed order — don't skip or go back
-2. Fill ALL blue/required fields on the first pass
-3. Use `computer_batch` to enter an entire screen in one call, screenshot at the end
-4. One calculate cycle at the end — aim for zero errors on first try
+2. **`Ctrl+N` is the FIRST action on every screen, no exceptions** (Rule 1 in 1040.md)
+3. Fill ALL **blue** required fields on the first pass (NOT yellow — yellow means focused, see color legend above)
+4. Use `computer_batch` to enter an entire screen in one call, screenshot at the end
+5. One calculate cycle at the end — aim for zero errors on first try
+6. First time you encounter a screen type: transcribe the HDE field-number overlay into the atlas in `references/[type].md` BEFORE data entry (Rule 27). Every subsequent encounter: skip the screenshot, go straight to `computer_batch` from the atlas + preprocessed values.
 
 ### Phase 3: Verify, Fix, and Ship
 
