@@ -4,6 +4,60 @@ Update this file after every 1065 return. This is how the skill gets smarter ove
 
 ---
 
+### 2026-04-11 — PATEL, KRUTEN & MONICA (MFJ) — 1040 Individual, TX resident + CA 540NR
+**Time:** ~90 minutes (continued across 2 sessions — context window reset after calculate)
+**Target:** 15 minutes
+**Return type:** 1040 MFJ Individual, TX resident (no state tax) + CA 540NR non-resident (CA-source SpaceX wages), 3× W-2 (SpaceX CA-source + DotCMS TX + CurAlinc TX), 1099-INT (Fidelity+Schwab), 1099-DIV (Robinhood+NFS+Schwab w/ foreign tax), 1099-B 5 sections (ST Box A, LT Box D ×2, LT Box E noncovered SpaceX RSU, LT Box F), Form 8889 HSA (family), Schedule A itemized (mortgage int + refi points + SALT capped), 8959 Addl Medicare, 8960 NIIT, FTC de minimis (no 1116), Direct Deposit for CA refund, Federal balance due.
+
+**Final numbers (clean, both GREEN):**
+- Federal: Total Income $577,825 / Taxable $522,174 / Total Tax $112,224 / Balance Due $22,660 (Check or CC)
+- CA 540NR: AGI $105,332 / CA-allocable $96,362 / Tax $7,670 / Refund $3,105 (Direct Deposit)
+- Total Tax Owed (net): $19,555
+- EF Status: Clean — Federal + CA540NR green checkmarks, Eligible for E.F.
+
+**Errors encountered:**
+1. EF 5244 Federal DIRECT DEPOSIT INFORMATION INCORRECT — DD screen field 11 "Repeat RTN" was empty while field 12 "Repeat Account" had value. The repeat row MUST fully match the top row.
+2. EF 5084/672 Federal MISSING PIN — **HDE entry on PIN field 2 (ERO's PIN signature) did not persist across screen exits.** Entered via HDE three times (5 dots showed each time) but field was blank after exit. Fix: Ctrl+N to exit HDE, direct-click field 2, type 75757, Tab. This time it stuck.
+3. EF TX 9074 PIN mismatch — resolved automatically once federal PIN field 2 stuck. Downstream of #2.
+4. EF CA 1392 Schedule CA NR — Line 7 "Owned a home/property within CA" Yes/No was blank. Drake requires explicit selection on NR screen even when line 5 "Nonresident ALL year" is already set.
+5. EF CA 6205 CA3853 — MAGI verification required. Fixed by checking HCM field 1 "YES EVERYBODY had MEC for every month of 2025" instead of the field 4 "verified MAGI" checkbox. Everyone had full-year coverage via 1095-C (SpaceX), so CA3853 isn't needed at all.
+6. DD field 2 "Y" rejected with "Your entry is not VALID for the current Field! State/City Selection (drop list)" — field 2 is a **state/city dropdown** (takes CA, AL, AR, etc.), NOT a Y/N field. Set to CA for the CA refund direct deposit.
+7. Exit button dropdown trap — clicking at (975, 125) or (987, 125) sometimes hits the "Exit Without Saving" dropdown arrow. The icon itself is at (985, 122).
+8. Help popup trap — pressing Escape while HDE popup was focused accidentally triggered F1 Help which opened a PIN Form 8879 help dialog. Close with OK button.
+
+**Root causes:**
+- **HDE PIN field 2 non-persistence is a real bug/quirk.** The PIN screen "ERO's PIN signature" field is a password field (shows 5 dots regardless of length). HDE entry appears to work — the dots render — but the value is not actually committed when the screen is exited. Direct click + type is the only reliable path for this specific field.
+- **DD screen field 11 (Repeat RTN) was silently optional-looking.** Drake displays the repeat row with both RTN and Account input boxes side by side; leaving RTN blank while populating Account is a classic copy-paste failure mode that produces EF 5244.
+- **DD field 2 is a state dropdown**, not Y/N. Earlier 1040 retros had flagged it as a "Y to select" field — WRONG. It's the state-code dropdown for which state's refund to deposit.
+- **CA NR screen line 7 is required even for full-year nonresidents.** When line 5 "Nonresident ALL year" = TX/TX, the NR screen still requires an explicit Yes/No on line 7 "Owned a home/property within CA". Drake does not infer "No" from line 5.
+- **CA HCM screen — check field 1 (everybody had MEC) instead of field 4 (verified MAGI).** If the return has full-year MEC for everyone, field 1 eliminates CA3853 entirely. Field 4 is for cases where CA3853 is actually being filed and MAGI needs to be verified. Checking field 1 is the cleaner fix when no Marketplace coverage and no exemptions.
+
+**Time lost per issue:**
+| Issue | Time Lost | Avoidable next time? |
+|-------|-----------|----------------------|
+| HDE PIN field 2 non-persistence discovery | ~15 min | Yes — now documented, skip HDE for this field |
+| DD field 11 Repeat RTN blank | ~5 min | Yes — fill BOTH fields 9/10 AND fields 11/12 in one batch |
+| DD field 2 "Y" wrong value | ~3 min | Yes — treat as state dropdown, enter CA (or leave blank if no state DD) |
+| CA 1392 NR line 7 discovery via CAMSG | ~8 min | Yes — always set line 7 on first pass for TX/CA-source returns |
+| CA 6205 CA3853 MAGI discovery | ~5 min | Yes — check HCM field 1 on first pass when full-year MEC |
+| Exit button dropdown trap | ~2 min | Yes — click (985, 122) for the icon |
+
+**Fix for next time:**
+1. **PIN screen field 2 — direct click exception.** Do NOT use HDE for the ERO's PIN signature field. Click directly at (720, 184), type 75757, Tab. Verify the 5 dots are there after exit.
+2. **DD screen — populate ALL four fields in one HDE batch:** field 9 RTN, field 10 Account, field 11 Repeat RTN, field 12 Repeat Account. Field 2 = CA (state dropdown, only if depositing a state refund), field 1 = Y (fed refund) or N (fed balance due).
+3. **CA NR screen — line 7 required.** For any CA 540NR return, always set line 7 Yes/No during NR screen entry. For TX-residents with CA-source wages only, answer "No" for both TP and Spouse.
+4. **CA HCM screen — check field 1 "YES EVERYBODY had MEC".** This is the default answer for Lineal clients with 1095-C employer coverage. Set it on first pass. Only check field 4 "verified MAGI" if actually filing CA3853.
+5. **CA errors surface in CAMSG via View/Print.** The calc dialog's EF Messages list shows federal errors; CA-specific errors appear in the CAMSG page in View/Print. Always check View/Print form tree for red CAMSG after calculating multi-state returns.
+
+**New pitfalls discovered:**
+- **HDE PIN field 2 non-persistence.** First documented instance of HDE failing to commit a field. Specific to password-masked input fields on the PIN screen. The workaround is the direct-click exception — this is now exception #5 in the HDE rules in 1040.md.
+- **DD field 11 Repeat RTN is mandatory when field 12 Repeat Account is populated.** Drake doesn't flag it as blue/required visually, but EF 5244 fires if they don't match.
+- **CA NR line 7 is a required field even for TX residents with only CA-source wages.** Not obvious from the NR screen layout.
+- **CA errors are hidden in CAMSG** — the calc dialog shows "CA540NR Eligible For E.F." green check even when CA has EF errors, because those errors live in the CAMSG View/Print page, not the main EF message list. This is a dangerous false-positive trap. Always verify by opening View/Print and scanning for red CAMSG/MESSAGES nodes in the form tree.
+- **Exit button dropdown arrow is at x=987-990, icon at x=985.** Click x=985 to avoid the dropdown.
+
+---
+
 ### 2026-04-10 — NIELSEN, BLAKE & BOONE, OLIVIA (MFJ) — 1040 Individual
 **Time:** ~180+ minutes (across 2 sessions — context window reset mid-return)
 **Target:** 15 min
