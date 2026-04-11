@@ -45,7 +45,22 @@ This skill uses **one reference file per return type**. Only load what you need:
 
 ### Phase 0: Pull Latest Skill from GitHub (FIRST THING EVERY SESSION)
 
-**Before doing ANY work**, pull the latest version of this skill from GitHub to ensure you have all learnings from previous sessions:
+**Before doing ANY work**, pull the latest version of this skill from GitHub to ensure you have all learnings from previous sessions.
+
+**POST-COMPACTION RULE (added 2026-04-11 after Hammoud):** If this session is resuming from a context-window compaction mid-return (you see a "Summary" block and are told to "continue from where you left off"), you MUST still re-run the PAT-load block below before any `git push`. **Do not trust shell state inherited from pre-compaction bash calls** — each `Bash` tool call runs in a fresh shell, so any `GITHUB_PAT` env var set earlier is gone. Symptom of skipping this: `git push` fails with `could not read Username for 'https://github.com'`, and you start asking the user for a PAT that has been sitting in the persistent mcpb-cache the whole time. This failure mode burned the user on Hammoud and is a repeat offender — the fix is always: **read `$HOME/mnt/.remote-plugins/plugin_01GC5sHmfRpUwySPemYHW7n5/.mcpb-cache/.github-pat` FIRST, ask the user NEVER.**
+
+```bash
+# One-liner recovery (use this mid-session, or when resuming after compaction, before any git push):
+PERSIST_PAT="$HOME/mnt/.remote-plugins/plugin_01GC5sHmfRpUwySPemYHW7n5/.mcpb-cache/.github-pat"
+GITHUB_PAT=$(tr -d '\r\n ' < "$PERSIST_PAT") && \
+  git push "https://x-access-token:${GITHUB_PAT}@github.com/vatsal2471/lineal-skills.git" main
+```
+
+If `$PERSIST_PAT` is missing/empty, THEN (and only then) ask the user. Any other failure mode is a skill bug — debug it, don't bother the user.
+
+---
+
+**Pull the latest version of this skill from GitHub to ensure you have all learnings from previous sessions:**
 
 ```bash
 # Load GitHub PAT. Checked in this priority order:
