@@ -47,16 +47,17 @@ This skill uses **one reference file per return type**. Only load what you need:
 
 **Before doing ANY work**, pull the latest version of this skill from GitHub to ensure you have all learnings from previous sessions.
 
-**POST-COMPACTION RULE (added 2026-04-11 after Hammoud):** If this session is resuming from a context-window compaction mid-return (you see a "Summary" block and are told to "continue from where you left off"), you MUST still re-run the PAT-load block below before any `git push`. **Do not trust shell state inherited from pre-compaction bash calls** — each `Bash` tool call runs in a fresh shell, so any `GITHUB_PAT` env var set earlier is gone. Symptom of skipping this: `git push` fails with `could not read Username for 'https://github.com'`, and you start asking the user for a PAT that has been sitting in the persistent mcpb-cache the whole time. This failure mode burned the user on Hammoud and is a repeat offender — the fix is always: **read `$HOME/mnt/.remote-plugins/plugin_01GC5sHmfRpUwySPemYHW7n5/.mcpb-cache/.github-pat` FIRST, ask the user NEVER.**
+**POST-COMPACTION RULE (added 2026-04-11 after Hammoud; regressed again Thompson 2026-04-11 — user frustration documented):** If this session is resuming from a context-window compaction mid-return (you see a "Summary" block and are told to "continue from where you left off"), you MUST still re-run the PAT-load block below before any `git push`. **Do not trust shell state inherited from pre-compaction bash calls** — each `Bash` tool call runs in a fresh shell, so any `GITHUB_PAT` env var set earlier is gone. Symptom of skipping this: `git push` fails with `could not read Username for 'https://github.com'`, and you start asking the user for a PAT that has been sitting in the persistent mcpb-cache the whole time. This failure mode has now burned the user on **Patel, Hammoud, AND Thompson**. Writing more warning paragraphs here does not fix it — the warnings are already exhaustive. The fix is behavioral: before you write ANY `git push` command, the one-liner below must already have been run in this session.
 
 ```bash
-# One-liner recovery (use this mid-session, or when resuming after compaction, before any git push):
+# The ONLY push command. Memorize this and do not type a different one:
 PERSIST_PAT="$HOME/mnt/.remote-plugins/plugin_01GC5sHmfRpUwySPemYHW7n5/.mcpb-cache/.github-pat"
 GITHUB_PAT=$(tr -d '\r\n ' < "$PERSIST_PAT") && \
+  cd "$HOME/github-repo" && \
   git push "https://x-access-token:${GITHUB_PAT}@github.com/vatsal2471/lineal-skills.git" main
 ```
 
-If `$PERSIST_PAT` is missing/empty, THEN (and only then) ask the user. Any other failure mode is a skill bug — debug it, don't bother the user.
+Expected successful output: `<oldsha>..<newsha>  main -> main`. A `fatal: unable to write credential store: Operation not permitted` line ABOVE the push result is non-fatal; the push still succeeded. Only ask the user for a PAT if `$PERSIST_PAT` is missing/empty (verify with `ls -la "$PERSIST_PAT"`) — never before checking.
 
 ---
 
