@@ -22,18 +22,27 @@ description: >
 >
 > The return is NOT DONE until the skill is updated and pushed. Do not wait for the user to remind you.
 
-> **🔒 PUSH FUNCTION — the ONLY way to push in this skill:**
+> **🔒 PUSH — never type `git push origin main`. Use `$HOME/bin/lineal_push` instead.**
 >
-> Never type `git push origin main`. It will always fail (no credentials in remote URL).
-> Instead, run this function definition ONCE per session, then call `lineal_push` every time:
+> `$HOME/bin/lineal_push` is an executable script that loads the PAT from mcpb-cache
+> inline every call. It works in every fresh Bash call via absolute path — no PATH
+> setup, no function definition, no sourcing, no Phase 0 dependency.
+> Phase 0 creates it. The `fatal: unable to write credential store` warning is
+> non-fatal; look for `main -> main` to confirm success.
+>
+> To push: `$HOME/bin/lineal_push`
+>
+> If the script doesn't exist yet (first Bash call of session, or post-compaction resume
+> before Phase 0 runs), create it with this one block then call it:
 > ```bash
-> lineal_push() {
->   local PAT
->   PAT=$(tr -d '\r\n ' < "$HOME/mnt/.remote-plugins/plugin_01GC5sHmfRpUwySPemYHW7n5/.mcpb-cache/.github-pat") || { echo "ERROR: PAT not found. Ask user."; return 1; }
->   cd "$HOME/github-repo" && git push "https://x-access-token:${PAT}@github.com/vatsal2471/lineal-skills.git" main
-> }
+> mkdir -p "$HOME/bin" && cat > "$HOME/bin/lineal_push" << 'S'
+> #!/bin/bash
+> PAT=$(tr -d '\r\n ' < "$HOME/mnt/.remote-plugins/plugin_01GC5sHmfRpUwySPemYHW7n5/.mcpb-cache/.github-pat") || { echo "ERROR: PAT not found."; exit 1; }
+> cd "$HOME/github-repo" && git push "https://x-access-token:${PAT}@github.com/vatsal2471/lineal-skills.git" main
+> S
+> chmod +x "$HOME/bin/lineal_push"
+> $HOME/bin/lineal_push
 > ```
-> This is self-contained — loads PAT inline every call, no Phase 0 dependency, no credential helper, no /tmp files. Define it in the FIRST Bash call of the session (even before Phase 0 pull), then use `lineal_push` everywhere else. The `fatal: unable to write credential store` warning is non-fatal; look for `main -> main` to confirm success.
 
 This skill automates tax return data entry in Drake Tax 2025. It encodes hard-won lessons from completing real returns — Drake UI quirks, required fields that aren't obvious, state-specific requirements, and the optimal sequence for each return type.
 
@@ -60,7 +69,7 @@ This skill uses **one reference file per return type**. Only load what you need:
 
 **Before doing ANY work**, pull the latest version of this skill from GitHub to ensure you have all learnings from previous sessions.
 
-**POST-COMPACTION NOTE:** After context-window compaction, shell state is gone. The `lineal_push` function (defined at the top of this file) must be redefined in the first Bash call. It loads the PAT inline every time — no dependency on prior shell state, Phase 0, or credential helpers.
+**POST-COMPACTION NOTE:** After context-window compaction, `$HOME/bin/lineal_push` may or may not still exist (depends on whether this is the same sandbox session). If it exists, just call it. If not, create it first using the block at the top of this file. Either way: `$HOME/bin/lineal_push` — absolute path, works in any fresh shell, no state to restore.
 
 ---
 
@@ -158,28 +167,19 @@ cd "$SESSION_DIR/github-repo"
 git config user.email "vatsal@lineal.cpa"
 git config user.name "Vatsal"
 
-# Only set up credential.helper if /tmp/.git-session-credentials is actually
-# writable by us. If it's owned by nobody:nogroup (stale from a prior namespace),
-# git will emit "unable to write credential store" on every push — a non-fatal
-# warning but a confusing one. Instead, unset the helper and rely on the PAT
-# being embedded in the remote URL for pushes.
-if [ -w /tmp/.git-session-credentials ] || ( : > /tmp/.git-session-credentials 2>/dev/null ); then
-  git config credential.helper "store --file=/tmp/.git-session-credentials"
-  printf 'https://x-access-token:%s@github.com\n' "$GITHUB_PAT" > /tmp/.git-session-credentials
-  chmod 600 /tmp/.git-session-credentials
-else
-  echo "Note: /tmp/.git-session-credentials not writable (stale nobody:nogroup file)."
-  echo "Unsetting credential.helper and using PAT-in-URL for pushes instead."
-  git config --unset credential.helper 2>/dev/null || true
-  git remote set-url origin "https://x-access-token:${GITHUB_PAT}@github.com/vatsal2471/lineal-skills.git"
-  # IMPORTANT: before committing the final "done" push, re-check the remote URL
-  # doesn't leak the PAT into the log. The preferred workflow is to leave origin
-  # as the clean https URL and pass the PAT-URL to `git push` directly:
-  #   git push "https://x-access-token:${GITHUB_PAT}@github.com/vatsal2471/lineal-skills.git" main
-fi
+# Create $HOME/bin/lineal_push — the ONLY push mechanism for this skill.
+# This is an executable script invoked by absolute path ($HOME/bin/lineal_push).
+# It works in every fresh Bash call because $HOME is always set correctly.
+# No PATH manipulation, no function definition, no credential helper needed.
+mkdir -p "$HOME/bin"
+cat > "$HOME/bin/lineal_push" << 'PUSH_SCRIPT'
+#!/bin/bash
+PAT=$(tr -d '\r\n ' < "$HOME/mnt/.remote-plugins/plugin_01GC5sHmfRpUwySPemYHW7n5/.mcpb-cache/.github-pat") || { echo "ERROR: PAT not found at mcpb-cache. Ask user."; exit 1; }
+cd "$HOME/github-repo" && git push "https://x-access-token:${PAT}@github.com/vatsal2471/lineal-skills.git" main
+PUSH_SCRIPT
+chmod +x "$HOME/bin/lineal_push"
+echo "Created $HOME/bin/lineal_push — use this for all pushes (absolute path, works in any shell)"
 ```
-
-**The "unable to write credential store" warning on push is NON-FATAL.** If you see it, the push still went through — look at the `To https://github.com/...` line below it and check for `<oldsha>..<newsha>  main -> main`. This warning happens whenever `credential.helper=store` is configured but the target file is not writable by us. The Phase 0 block above tries to avoid setting that helper in the first place, but if you inherit a repo from a previous session that already has it configured, you will see the warning. Do not panic and do not ask the user for a new PAT — verify the push result by running `git log origin/main -1` after fetching.
 
 The repo structure is:
 ```
@@ -300,9 +300,9 @@ Follow the screen order in the return-type reference file. The general principle
    cd "$HOME/github-repo"
    git add drake-tax-return/
    git commit -m "Return: [Client] [Type] — [summary of learnings]"
-   lineal_push
+   $HOME/bin/lineal_push
    ```
-   `lineal_push` is defined at the top of this file. It loads the PAT from mcpb-cache inline every call — no dependency on Phase 0, no credential helpers, no /tmp files. If you haven't defined it yet this session, define it first (copy from the top of this file). **Never type `git push origin main` — it will always fail.**
+   `$HOME/bin/lineal_push` is created by Phase 0. It loads the PAT from mcpb-cache inline every call. If the script doesn't exist (post-compaction resume before Phase 0), create it first using the block at the top of this file. **Never type `git push origin main`.**
 
 6. **Package and present** the updated `.skill` file so the user can reinstall with new learnings:
    ```bash
