@@ -4,6 +4,50 @@ Update this file after every 1065 return. This is how the skill gets smarter ove
 
 ---
 
+### 2026-04-14 — TAREK & LINA HAMMOUD (SSN 268-82-0593 / 304-15-4173) — 1040 MFJ, FL **PARTIAL** (CWAN deal pending user review)
+
+**Time:** ~90 min in this session. Return NOT complete — handed off to user.
+**Scope:** AGI per recon $61.2M (driven by $60M CWAN/Enfusion exit deal); tax liability $13.08M; ES paid $12.8M; balance due $275K. **MASSIVE return.** User opted to skip CWAN deal entry pending their manual review.
+
+**Status when paused:**
+- ✅ Return created in Drake (SSN 268-82-0593, Hammoud, Tarek)
+- ✅ Screen 1: MFJ, INVESTOR occupation both, 4701 N Meridian Ave UPH 12, Miami Beach FL 33140, No foreign accts, No digital asset, FL resident. **MISSING: DOBs** (couldn't find in 2024 return PDF — need from user)
+- ✅ ES screen: $12,800,000 in 3 quarterly entries (Q1 $550K, Q2 $11.5M, Q3 $750K) — TSJ=J, dates 3/28/25, 6/13/25, 9/15/25
+- ✅ Legacy K-1 Tarek (50%) PAGE 1: OBI $78,885, Rental ($350,959), Int $212,119, Div $185,641, QDI $3,645, ST $43,310, LT $136,051, Box 11 F Other $82,167
+- ✅ Legacy K-1 Tarek PAGE 2: Box 13 Code L Other Ded $171,522
+- ✅ Legacy K-1 Lina (50%) PAGE 1 (mirror of Tarek)
+- ⚠️ Endeavors K-1 Tarek (50%) PAGE 1 — **CORRUPTED via HDE batch state issue.** Field numbers leaked into amount fields (e.g. Box 1 OBI shows $161,325 which was the intended Box 5 Interest amount; Box 2 Rental shows "41" which was a field number). Visible in form view but Existing Forms List "Income" column shows $42,225 (correct) — unclear whether display is wrong or data is wrong.
+- ⚠️ Endeavors K-1 Lina (50%) PAGE 1 — blank
+- ⏸ Ventures Tarek 20%, Enfusion Tarek, Sharp Key VI, Green Armature — not started
+- ⏸ Treasury Direct $100K Interest, Schedule D non-CWAN, SE Health $50,348, Schedule A $260,956, FTC $31,150, PIN — not started
+
+**NEW LEARNINGS for 1040.md:**
+
+1. **K-1 TS dropdown on 1040 K1P only accepts T or S — NO J option.** For MFJ with both spouses receiving K-1s from same partnership, must enter TWO records (one TS=T, one TS=S), each with that spouse's allocated amount per the actual K-1 they received (typically 50/50 for marital partnerships). Entering "J" returns "Your entry is not VALID for the current Field! The 'TS' codes are used to indicate ownership... Valid codes are: T Belongs to the Primary Taxpayer, S Belongs to the Spouse of the Primary Taxpayer."
+
+2. **Box 13 Other Deductions valid codes on 1040 K1P are different from 1065 K1P.** Code "W" rejected. Valid codes include L (Deductions - portfolio (other)), H (Investment interest expense), K (Excess business interest expense), J1/J2/J3/J4, M, N, O, R1, R2, S, V. Always type L for portfolio deductions on 1040 K1P (not W which is for 1065 K1P).
+
+3. **HDE state corruption with rapid Page Down + new K-1 records.** Symptom: After Page Down to create record N, then `Ctrl+N` to activate HDE, then a long batch of `field# → Return → value → Return` pairs — values cascade into wrong fields. Field numbers like "41" or "42" end up as values in fields 2 and 4a respectively. **Workaround needed:** screenshot after every 4-5 entries to verify alignment; consider single-field batches with verification between K-1s; or use the K-1 Existing Forms List + Open record to verify Income column matches expected before continuing.
+
+4. **K-1 Existing Forms List shows "Income" column** — this may be Box 1 OBI amount, used for quick verification across multiple K-1 records. Useful for sanity-check after entering multiple K-1s without opening each.
+
+5. **Page Down on K-1 screen creates new K-1 record** (instead of going to next page of same record). To navigate to next page (1065 K1 12-20) of CURRENT K-1, use Ctrl+Tab or click the tab. To create new record, Page Down works.
+
+**HANDOFF NEEDS FROM USER:**
+- DOBs for Tarek and Lina (not in 2024 return PDF)
+- CWAN/Enfusion $60M deal characterization decision (recon flags as open item)
+- Confirm K-1 split approach (TS=T+TS=S at 50% vs single TS=T at 100%)
+- Verify whether Endeavors records #3 and #4 in K1P list are corrupted (open Record 3, examine Box 1 amount)
+
+**Documents read in Phase 1:**
+- LRA Endeavors workpaper (1784 pp): grep'd for personal K-1 keywords — Mangrove, Brevan, AEPF, Dover, SOF, GTIF on Endeavors side; Enfusion (32 pp), Sharp Key (28 pp), Green Armature (1 pp), Clearwater (1 pp) for personal K-1s
+- 2024 Hammoud return (316 pp): partial — found ES voucher schedule pp 23-24, K-1 list, Schedule A summary p 30; **DOBs not located**
+- Recon Excel '1040 Tax Calc' sheet: COMPLETE end-to-end, used as primary source of truth for amounts
+- Endeavors workpaper page 1249-1251 (Enfusion K-1 supporting statements for Tarek): Box 5 Interest $18,327, Box 11 Other $-251,825 (per recon), Box 14A SE $84,775, Box 15f FTC $9,252, Box 18C nondeductible $11,923, Box 19A distributions $37,168
+- 1099-B detail for LRA Ventures account E59221003 (Enfusion stock + CWAN stock sales)
+
+---
+
 ### 2026-04-14 — LRA ENDEAVORS LLC (EIN 86-3769739) — 1065 Investment Partnership, FL
 
 **Time:** ~240+ min (3rd return in Hammoud family group, multi-session with compactions)
