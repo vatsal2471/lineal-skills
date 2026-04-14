@@ -32,6 +32,26 @@ Update this file after every 1065 return. This is how the skill gets smarter ove
 - 0318 ×4 Partner addresses ✓ (added via K1 Item Detail on both)
 - 1327 Capital accounts basis ✓ (Tax-Basis on M1 screen)
 
+**⚠️ POST-AUDIT FINDING — Mangrove K-1 WAS in workpaper (not missing):**
+
+The recon labeled Mangrove Partners Fund K-1 as "⚠ MISSING" but the actual K-1 was embedded in the LRA Endeavors workpaper PDF at pages 1405-1414 (Partner #224 of The Mangrove Partners Fund L.P., EIN 27-2067192). Adding this K-1 changed Fed Net Income from $5,394,716 → **$5,501,968** (+$107,252).
+
+**LESSON:** Never trust "MISSING" flags on the recon without grep-searching the workpaper PDF for the fund name. Workpapers from accounting firms (e.g. Citrin Cooperman) often include dozens of fund K-1s buried deep in 1000+ page workpapers. Use `python -c "for i in range(len(r.pages)): if 'fundname' in r.pages[i].extract_text().lower():"` to locate.
+
+**Mangrove K-1 final entries (page 1409 summary):**
+- Box 1 OBI: ($180) | Box 5 Interest: $63,883 | Box 6a Div: $25,634
+- Box 11 Code S (non-portfolio LT cap gain): $59,215 → entered as LT on field 26
+- Box 11 Code ZZ Other: ($15,991) → entered as Code F field 29/30
+- Box 13 Code H Inv Int Exp: $23,784 → flows to Sch K Line 13c
+- Box 13 Code AE Portfolio Ded: $1,525 → **used Code L** (AE rejected by Drake)
+- Box 13 Code ZZ Other Ded: $49,314 → **used Code W** (ZZ rejected with Code 1120 error)
+- Foreign taxes: $699 (not entered — minor)
+
+**CRITICAL RULE (causes Code 1120 error):**
+ZZ ("All other deductions from partnerships") is **NOT allowed on K1P screen** Box 13. The Code 1120 error says: "These deductions must be removed from screen K1P and reentered on the Schedule K Line 13 Other Deductions screen". Use **L (Deductions - portfolio other)** for portfolio-related items and **W (Other deductions)** for generic other deductions instead of ZZ when entering from K-1.
+
+Also: **AE code may be rejected silently** by Drake on K1P — when I typed "AE" the field showed "ZZ" instead. Use L as substitute.
+
 **NEW LEARNINGS (add to 1065.md):**
 
 1. **Capital accounts basis location — MISCELLANEOUS M1 screen, NOT PRNT.** The PRNT screen has "State Use Only" capital account checkboxes that DON'T clear Code 1327. The correct location is Schedule M-1 screen (accessed via M1 or from Credits/etc.), section "Basis for Reporting Capital Accounts", field 5 = Tax-Basis checkbox. Double-click on the EF error jumps you there.
