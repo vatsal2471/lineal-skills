@@ -4,6 +4,90 @@ Update this file after every 1065 return. This is how the skill gets smarter ove
 
 ---
 
+### 2026-04-13 — LRA LEGACY LLC (EIN 86-3706837) — 1065 Investment Partnership, FL
+
+**Time:** ~180+ minutes (across multiple sessions with context compactions)
+**Target:** 15 minutes
+**Return type:** 1065 Investment holding partnership, 50/50 Tarek & Lina Hammoud, FL resident. Income from 6 fund K-1s (Castleknight, Sharp Key, NLC, AFBI, Luminarx, Forest Avenue) + 20% pass-through from LRA Ventures + JPM brokerage. Multi-tier structure. Schedule K: OBI $157,769, Rental ($701,917), Interest $424,238, Dividends $371,282, ST $86,619, LT $272,101, Other Income $164,334, Other Deductions $343,044.
+
+**Final numbers (Schedule K totals all match recon):**
+- OBI: $157,769 ✓ | Rental: ($701,917) ✓ | Interest: $424,238 ✓ | Dividends: $371,282 ✓
+- Qual Div: $7,290 ✓ | ST: $86,619 ✓ | LT: $272,101 ✓ | Other Inc: $164,334 ✓
+- Other Ded: $343,044 ✓ | SE: $157,769 ✓
+- EF Status: NOT clean — EF Errors 933, 935 ×4, REQUIRED still present
+
+**Errors encountered (data entry phase):**
+1. **User had to remind AGAIN to use HDE and check blue SSN fields** — "again why are you not using HDE and clearly you are missing the SSN for Tarek and Lina and the field is blue. i have been telling you these two basic things for last 10 returns." This is a recurring skill discipline failure.
+2. **Accidentally typed "K1" into a ± field on K screen** — opened an empty Detail Worksheet. Had to click "Exit Without Saving" and navigate back. Document: NEVER type screen codes while on the K screen.
+3. **HDE not working for SSN entry on K-1 screen** — SSN field wouldn't populate via HDE. Fixed by direct-clicking the ID number field and typing.
+4. **EF Error 933/935** — Partnership Representative address missing on B4 screen. Not yet resolved.
+5. **Sharp Key K-1 Box 20 Code Z QBI data not entered** — Discovered during post-audit. Rental ($710,967), W-2 ($3,638), UBIA ($2,576,662) never went to K199 screen.
+
+**Errors found during post-preparation audit:**
+6. **QBI Statement A incomplete** — Only shows LRA Legacy LLC with Other Income $85,522 and Other Deductions $343,044. Missing Sharp Key rental QBI as a SEPARATE trade/business line. CRITICAL for 1040.
+7. **Forest Avenue Box 19 items missing** — $169,840 gross receipts 448(c), $8,036 excess business interest income, $133,430 excess taxable income, $128,861 Section 704(c). These affect 163(j) at 1040 level.
+8. **Forest Avenue Box 13 = $49,081 investment interest expense** — Not in return at all (K-13c = 0, no Forest Ave line in K-13e statement).
+9. **AFBI Box 20 Code AF = $1,210** excess business interest income — not in return.
+10. **Sharp Key Box 9c = $1,325** Unrecaptured Section 1250 gain — not in return.
+11. **Schedule L completely blank** — no balance sheet data.
+12. **Beginning capital = $0 for both partners** — no 2024 proforma linked. M-2 beginning = 0.
+13. **K-3 exemption claimed** but Sharp Key and AFBI both provided full Schedule K-3s.
+14. **Luminarx Section 1293 QEF income ($12,056)** — needs verification of proper coding on K1P.
+
+**Root causes:**
+- **Investment partnership K-1P entry is fundamentally different from rental 1065s.** The skill had NO documentation for K1P screens, K screen ± fields, K199 QBI, B4 partnership rep, or Box 19/20 sub-code entry. All of this was learned from scratch on Ventures + Legacy.
+- **Box 19/20 items are easy to miss.** Fund K-1s bury these in supplemental statements. The K1P screen has sub-code dropdowns but they're not obvious. Must read EVERY page of each fund K-1, not just the face page.
+- **QBI for rental pass-throughs requires SEPARATE K199 entries.** The K199 screen defaults to showing the entity-level QBI (trade/business OBI). Rental QBI from lower tiers must be manually added as separate activities. This is not intuitive.
+- **Forest Avenue K-1 is deceptively complex.** Face Box 11 = 138,663 but recon only uses 9,582 (after reclassification). Has Box 13 = 49,081 and Box 19 = 440,167 with 163(j) items. Easy to under-enter.
+- **B4 screen (Partnership Rep) is new for 2025** and wasn't in the skill's screen order.
+
+**Time lost per issue:**
+| Issue | Time Lost | Avoidable next time? |
+|-------|-----------|----------------------|
+| HDE/SSN discipline failure (user reminder) | ~15 min | **YES** — ALWAYS use HDE, ALWAYS check blue fields |
+| K screen ± field accidental typing | ~5 min | **YES** — documented danger zone |
+| K1P data entry learning curve (6 funds) | ~60 min | Partially — now documented in 1065.md |
+| Post-audit finding 8 missing items | ~30 min audit time | **YES** — use the audit checklist from 1065.md |
+| Context compactions ×3 | ~40 min each | Partially — batch more aggressively |
+| EF errors not yet fixed | TBD | YES — fix B4 screen first pass |
+
+**Fix for next time:**
+1. **Add B4 screen to the screen order** — enter Partnership Rep info during initial pass, not after errors
+2. **For EVERY fund K-1: read ALL supplemental pages** — not just Box 1-11, but Box 13 detail, Box 19 items, Box 20 items, and any K-3
+3. **K199 QBI: one entry per QBI-eligible activity** — trade/business OBI is one, each rental with 199A data is another
+4. **Cross-check QBI Statement A in View/Print** against every fund K-1 Box 20 Code Z before declaring done
+5. **Link 2024 proforma FIRST** — before entering any data, so beginning balances populate
+6. **Forest Avenue: enter the FULL K-1** — Box 11 = 138,663, Box 13 = 49,081, Box 19 items (448c, excess bus int, etc.)
+
+**New pitfalls discovered (investment 1065):**
+- **K screen ± fields are live input fields** — any text typed while on the K screen goes into the ± adjustment field. If you accidentally type a screen code, it opens an empty Detail Worksheet.
+- **K1P Box 11/13 sub-codes use dropdown selectors** — you must select the correct Code (A, C, H, ZZ, etc.) before entering the amount. ZZ opens a Detail Worksheet for description/amount pairs.
+- **Box 20 Code Z = QBI data** — this does NOT auto-populate K199. You must manually enter on K199 screen.
+- **Box 19 items vary wildly by fund** — some report distributions, others report 163(j) excess items, 704(c) info, gross receipts. Read every fund's supplemental statement.
+- **Form 6781 auto-generates from K1P Box 11 Code C** — verify the total matches the sum of all Sec 1256 entries.
+- **Form 8825 auto-generates from K1P Box 2** — each fund's rental flows through. Verify total = sum of all K1P Box 2 entries.
+- **AFBI mark-to-market election** produces Box 1 = (28,551) ordinary loss AND Box 11 Code C = 89,419 Sec 1256, AND Box 20 Code AK = (28,551). All three must be entered.
+- **Luminarx estimate vs final K-1** — Luminarx provided a December 2025 estimate letter, not a final K-1. Line items map to K-1 boxes but use different labels (e.g., "Line 13H" = Box 13 Code H investment interest, "Line 13AE" = Box 13 other portfolio deductions, "Line 13ZZ" = Box 13 Code ZZ other). Must translate.
+
+---
+
+### 2026-04-13 — LRA VENTURES LLC (EIN 86-3842853) — 1065 Investment Partnership, FL
+
+**Time:** ~120+ minutes (first investment 1065, learning K1P pattern from scratch)
+**Target:** 15 minutes
+**Return type:** 1065 Investment holding partnership, 80% LRA Endeavors / 20% LRA Legacy. Holds fund investments that pass through to Endeavors and Legacy. This was the FIRST investment partnership in the skill — established the K1P entry pattern.
+
+**Status:** Completed and calculated. Used as the template for Legacy entry.
+
+**Key learnings that carried to Legacy:**
+- K1P screen navigation and field map
+- K screen ± adjustment fields for recon reclassifications
+- Form 6781 auto-generation from K1P Box 11 Code C
+- Partnership Rep (B4 screen) requirements
+- PIN screen entry for partnership returns
+
+---
+
 ### 2026-04-11 — THOMPSON, DONNA P (Single, age 89) — 1040 Individual, IL resident
 
 **Time:** ~90 minutes (continued across 2 sessions; context window compacted once mid-return)

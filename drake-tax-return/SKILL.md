@@ -46,6 +46,45 @@ description: >
 
 This skill automates tax return data entry in Drake Tax 2025. It encodes hard-won lessons from completing real returns — Drake UI quirks, required fields that aren't obvious, state-specific requirements, and the optimal sequence for each return type.
 
+## ⛔ THREE RECURRING FAILURES — READ EVERY SESSION
+
+These three mistakes have been repeated on nearly every return despite being documented. They are the #1, #2, and #3 causes of wasted time. **Before touching Drake, read these three rules out loud in your response.**
+
+### FAILURE #1: GitHub PAT — Stop asking the user for it
+
+The PAT is ALREADY stored. It has been stored since the very first session. You keep failing to find it because you only check env vars and `/tmp/`. **CHECK THESE SOURCES IN ORDER:**
+
+1. `$HOME/mnt/.remote-plugins/plugin_01GC5sHmfRpUwySPemYHW7n5/.mcpb-cache/.github-pat` (persistent file)
+2. The git remote URL in `$HOME/github-repo/.git/config` — it often has the PAT embedded: `https://github_pat_XXXX@github.com/vatsal2471/lineal-skills.git`
+3. `/tmp/.git-session-credentials`
+4. `$GITHUB_PAT` env var
+
+**If the repo is already cloned with the PAT in the remote URL, you can push immediately.** Run `git remote -v` to check. DO NOT prompt the user. The user has told you this multiple times: "there is a persistent pat, i know you have it."
+
+### FAILURE #2: Not using HDE (Heads Down Entry)
+
+**HDE (Ctrl+N) is MANDATORY on every Drake screen.** The user has had to remind you on at least 10 returns: "again why are you not using HDE." Direct pixel-clicking is SLOWER, LESS RELIABLE, and causes more errors.
+
+Before every `computer_batch` on a Drake data entry screen, you MUST:
+1. Press Ctrl+N to activate HDE
+2. Use the HDE pattern: click (548,87) → type field# → Return → click (585,91) → type value → Return
+3. Stay in HDE for the ENTIRE screen
+
+The ONLY exceptions are: toolbar buttons, tab navigation between screen sections, and PIN field 2 (password-masked field that doesn't persist via HDE).
+
+### FAILURE #3: Not recognizing blue required fields
+
+**Blue/blue-ish background on a field = REQUIRED for e-file.** Drake even shows a WARNING DIALOG when you try to exit a screen with an empty required field. The user has pointed this out repeatedly: "clearly you are missing the SSN for Tarek and Lina and the field is blue."
+
+Before exiting ANY screen:
+1. Visually scan for blue-shaded empty fields
+2. If Drake shows a "required field" warning on exit, STOP and fill the field
+3. Common missed blue fields: SSN/EIN on K-1, Country of Citizenship, QBI dropdown, Partnership Rep address
+
+**Do not proceed past a screen with empty blue fields.** This has caused EF errors on every single return.
+
+---
+
 ## Architecture: Progressive Loading
 
 This skill uses **one reference file per return type**. Only load what you need:
@@ -136,10 +175,21 @@ elif [ -r "$SKILLS_ROOT_PAT" ] && [ -s "$SKILLS_ROOT_PAT" ]; then
   # Mirror into mcpb-cache for faster access next session
   mkdir -p "$PERSIST_DIR" 2>/dev/null
   printf '%s' "$GITHUB_PAT" > "$PERSIST_PAT" && chmod 600 "$PERSIST_PAT" 2>/dev/null
+elif [ -d "$SESSION_ROOT/github-repo/.git" ]; then
+  # Check if the PAT is embedded in the git remote URL from a prior session clone
+  GITHUB_PAT=$(git -C "$SESSION_ROOT/github-repo" remote get-url origin 2>/dev/null | sed -n 's|.*x-access-token:\([^@]*\)@.*|\1|p')
+  if [ -n "$GITHUB_PAT" ]; then
+    echo "Using PAT from git remote URL in existing repo clone"
+    # Mirror into mcpb-cache for faster access next session
+    mkdir -p "$PERSIST_DIR" 2>/dev/null
+    printf '%s' "$GITHUB_PAT" > "$PERSIST_PAT" && chmod 600 "$PERSIST_PAT" 2>/dev/null
+  fi
 elif [ -r /tmp/.git-session-credentials ]; then
   GITHUB_PAT=$(sed -n 's|.*x-access-token:\([^@]*\)@.*|\1|p' /tmp/.git-session-credentials | head -1)
   echo "Using PAT from session credential helper (session-local)"
-else
+fi
+
+if [ -z "$GITHUB_PAT" ]; then
   echo "NO PAT AVAILABLE — stop and ask the user:"
   echo "  'I need a fine-grained GitHub PAT for vatsal2471/lineal-skills (Contents: Read and write).'"
   echo "  'I'll write it to the persistent mcpb-cache so you only have to paste it once.'"
