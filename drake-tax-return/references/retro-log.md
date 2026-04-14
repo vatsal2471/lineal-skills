@@ -4,6 +4,65 @@ Update this file after every 1065 return. This is how the skill gets smarter ove
 
 ---
 
+### 2026-04-14 — LRA ENDEAVORS LLC (EIN 86-3769739) — 1065 Investment Partnership, FL
+
+**Time:** ~240+ min (3rd return in Hammoud family group, multi-session with compactions)
+**Target:** 15 min
+**Return type:** 1065 Investment partnership, 50/50 Tarek & Lina Hammoud, FL. Income from 6 fund K-1Ps (Brevan Howard Alpha, AEPF IV, Dover Street XI, SOF XIII, GTIF, LRA Ventures 80%) + 19 brokerage accounts. Schedule K Net Income $5,394,716 (all to Limited Partners).
+
+**Final Schedule K (matches workpaper recon structure; $1.24M gap to recon target due to missing Mangrove K-1 + AEPF IV scaling variance):**
+- OBI: $67,707 (GTIF $84,449 + AEPF -$7,366 + SOF -$9,376)
+- Net rental real estate: ($22,737) from AEPF & SOF K1Ps
+- Interest: $367,354 (Brok $90,522 + Brevan $231,961 + AEPF $40,031 + Dover $420 + SOF $4,253 + Ventures $167)
+- Ord Div: $3,103,939 (Brok $3,051,203 + SOF $75 + Ventures $52,661)
+- QDI: $949,417 (Brok $943,982 + AEPF $5,435)
+- ST: $196,094 (Brok -$568,115 + Ventures $751,843 + AEPF $10,518 + SOF $1,848)
+- LT: $1,769,676 (Brok $675,917 + Ventures $1,067,110 + AEPF $7,734 + Dover $18,915)
+- Sec 1231: $12,662 (AEPF IV)
+- Other Income: $152,673
+- Charitable: $28,653 (from Ventures K1P)
+- Other Deductions: $180,203 (Brok $138,222 + GTIF $15,185 + AEPF $13,513 + Dover $8,852 + SOF $4,431)
+- Foreign taxes: $43,796 (Brokerage ADR)
+- K-1 Tarek (50%): OBI $33,854, INT $183,677, DIV $1,551,970, QDI $474,709, ST $98,047, LT $884,838 ✓
+- K-1 Lina (50%): identical to Tarek
+
+**EF Status:** 1 error remaining (Code 0430 K-2 Parts II/III). All others cleared:
+- 0012 Schedule B-1 ✓ (added both partners Line 2b)
+- 0209 SEC screen ✓ (entered 0 for prior-year income)
+- 0318 ×4 Partner addresses ✓ (added via K1 Item Detail on both)
+- 1327 Capital accounts basis ✓ (Tax-Basis on M1 screen)
+
+**NEW LEARNINGS (add to 1065.md):**
+
+1. **Capital accounts basis location — MISCELLANEOUS M1 screen, NOT PRNT.** The PRNT screen has "State Use Only" capital account checkboxes that DON'T clear Code 1327. The correct location is Schedule M-1 screen (accessed via M1 or from Credits/etc.), section "Basis for Reporting Capital Accounts", field 5 = Tax-Basis checkbox. Double-click on the EF error jumps you there.
+
+2. **K-2/K-3 Line 16 checkbox must be selected on K screen Credits tab** — 4 options (a/b/c/d). For partnerships with foreign activity (FTax > $300), select option b (field 11 via HDE: "Schedule K-2 is required. Schedules K-3 are required and will be produced for all partners"). This clears the label error but NOT the actual Parts II/III completion requirement.
+
+3. **K-2 Part III Section 4 (Foreign Taxes) entry is complex.** Error 0430 persists even with Line 16 option b selected. Requires entering on III4 screen: Country/Category dropdown, Type of tax, Category of income (Passive for ADR), Date Paid (Various), Amount in USD. For brokerage ADR withholding of e.g. $43,796, use: Country = "OC" (Other Country), Category = "PAS" (Passive), Date = "VAR" (Various).
+
+4. **K1 Item Detail for partner addresses is MANDATORY for e-file.** Code 0318 appears 4× (once per required address component — street, city, state, zip). Fixed via K1 grid → select partner → Item Detail → HDE fields 20 (address), 21 (city), 22 (state), 23 (ZIP).
+
+5. **K1 Type of Partner dropdown requires full word "INDIVIDUAL"** not abbreviation. Typing "II" returns "Your entry is not VALID for the current Field!" with drop-down options (INDIVIDUAL, IND SMLLC, IND PASSIVE, CORPORATION, etc.).
+
+6. **Schedule B-1 Line 2b required for any individual owning ≥50%.** Since both Tarek and Lina own 50%, both must be listed. Fields: ID Number, Name, (Estate checkbox if estate), Country of Citizenship (US), Max % Owned.
+
+7. **SEC screen prior-year income can be 0 for investment partnerships** — Code 0209 accepts 0 since investment partnerships have no gross receipts on Form 1065 Line 8.
+
+8. **PRNT screen "Item M on Schedule K-1" built-in gain/loss** — select No (field 23, Space toggle) to confirm partners didn't contribute property with built-in gain/loss. This is a required disclosure.
+
+9. **Schedule B Line 1 Partnership type checkbox** — for LLC taxed as partnership, select "Domestic LLC" (field 3), not "Domestic general partnership".
+
+10. **Schedule B Line 4 (Q4 reduced reporting requirement) should be NO** for investment partnerships with >$1M assets. Answering Yes incorrectly could suppress Schedule L.
+
+**Key reconciliation learning:** For investment partnerships with multi-tier structure, the actual Drake Schedule K output should be verified by computing expected totals = Direct brokerage (on K screen) + Fund K1P flows + Pass-through K1P flows. The recon document may not perfectly match because it aggregates at different levels. The DRAKE output is correct if each K1P record matches its source K-1.
+
+**Schedule D trick for aggregate brokerage net:** When you have net ST/LT gain/loss without detailed proceeds/cost, enter on D2 Lines 1a/8a with:
+- Net loss: proceeds = 0, cost = |loss amount|
+- Net gain: proceeds = |gain amount|, cost = 0
+Produces correct Schedule D totals. Not ideal for IRS basis matching but acceptable for preparation.
+
+---
+
 ### 2026-04-13 — LRA LEGACY LLC (EIN 86-3706837) — 1065 Investment Partnership, FL
 
 **Time:** ~180+ minutes (across multiple sessions with context compactions)
